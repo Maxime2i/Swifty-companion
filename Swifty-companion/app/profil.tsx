@@ -3,6 +3,7 @@ import { StyleSheet, View, Dimensions, SafeAreaView, StatusBar, Platform, Image,
 import { ThemedText } from '@/components/ThemedText';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
 
 const { height, width } = Dimensions.get('window');
 
@@ -13,6 +14,7 @@ export default function ProfilScreen() {
   const animatedValue = useRef(new Animated.Value(0)).current;
   const levelProgressAnimation = useRef(new Animated.Value(0)).current;
   const [expandedProjects, setExpandedProjects] = useState<{ [key: string]: boolean }>({});
+  const [selectedCursus, setSelectedCursus] = useState(0);
 
   useEffect(() => {
     if (userData) {
@@ -137,6 +139,17 @@ export default function ProfilScreen() {
                   <ThemedText style={styles.fullName}>{user.usual_full_name}</ThemedText>
                   <ThemedText style={styles.text}>@{user.login}  ({user.kind})</ThemedText>
                   <ThemedText style={styles.text}>Campus: {user.campus?.[0]?.name || 'Campus non spécifié'}</ThemedText>
+                  <View style={styles.cursusSelector}>
+                    <Picker
+                      selectedValue={selectedCursus}
+                      style={styles.cursusPicker}
+                      onValueChange={(itemValue) => setSelectedCursus(itemValue)}
+                    >
+                      {user.cursus_users?.map((cursus, index) => (
+                        <Picker.Item key={index} label={cursus.cursus.name} value={index} />
+                      ))}
+                    </Picker>
+                  </View>
                 </View>
               </View>
               <View style={styles.levelContainer}>
@@ -436,5 +449,20 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#1E90FF',
     borderRadius: 5,
+  },
+  cursusSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  cursusLabel: {
+    color: 'white',
+    fontSize: 16,
+    marginRight: 10,
+  },
+  cursusPicker: {
+    flex: 1,
+    color: 'white',
+    backgroundColor: '#333',
   },
 });
