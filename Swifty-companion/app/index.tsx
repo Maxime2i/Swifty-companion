@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Button, TextInput } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { API_UID, API_SECRET } from '@env';
 import axios from 'axios';
-
+import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [userData, setUserData] = useState<any>(null);
+  const [login, setLogin] = useState<string>('');
+  const router = useRouter();
 
   useEffect(() => {
     const getAccessToken = async () => {
@@ -28,32 +29,39 @@ export default function HomeScreen() {
     getAccessToken();
   }, []);
 
-  useEffect(() => {
-    const getUserData = async () => {
-      if (accessToken) {
-        try {
-          const response = await axios.get('https://api.intra.42.fr/v2/users/mlangloi', {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          });
-          setUserData(response.data);
-          console.log('Données utilisateur:', response.data);
-        } catch (error) {
-          console.error('Erreur lors de la récupération des données utilisateur:', error);
-        }
+  const getUserData = async () => {
+    if (accessToken && login) {
+      try {
+        const response = await axios.get(`https://api.intra.42.fr/v2/users/${login}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        console.log('Données utilisateur:', response.data);
+        // Redirection vers la page de profil avec les données utilisateur
+        router.push({
+          pathname: '/profil',
+          params: { userData: JSON.stringify(response.data) }
+        });
+      } catch (error) {
+        console.error('Erreur lors de la récupération des données utilisateur:', error);
+        // Afficher un message d'erreur à l'utilisateur ici
       }
-    };
-
-    getUserData();
-  }, [accessToken]);
+    }
+  };
 
   return (
     <ThemedView style={styles.container}>
       <ThemedText style={styles.text}>Hello</ThemedText>
-      {userData && (
-        <ThemedText style={styles.userInfo}>
-          Utilisateur: {userData.login}
-        </ThemedText>
-      )}
+      <TextInput
+        style={styles.input}
+        onChangeText={setLogin}
+        value={login}
+        placeholder="Entrez le login"
+        placeholderTextColor="#888"
+      />
+      <Button 
+        title="Rechercher" 
+        onPress={getUserData}
+      />
     </ThemedView>
   );
 }
@@ -74,5 +82,17 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     marginTop: 20,
+  },
+  link: {
+    marginTop: 20,
+  },
+  input: {
+    height: 40,
+    width: '80%',
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 20,
+    paddingHorizontal: 10,
+    color: 'white',
   },
 });
