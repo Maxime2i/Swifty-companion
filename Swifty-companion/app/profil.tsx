@@ -27,6 +27,14 @@ export default function ProfilScreen() {
         setUser(parsedUserData);
         setProjects(parsedUserProjects);
         
+        // Sélectionner le cursus avec l'ID le plus élevé par défaut
+        if (parsedUserData.cursus_users && parsedUserData.cursus_users.length > 0) {
+          const defaultCursus = parsedUserData.cursus_users.reduce((prev: any, current: any) => {
+            return (prev.cursus.id > current.cursus.id) ? prev : current;
+          }).cursus;
+          setSelectedCursus({ id: defaultCursus.id, name: defaultCursus.name });
+        }
+        
         // Animer la barre de niveau
         Animated.timing(levelProgressAnimation, {
           toValue: ((parsedUserData.cursus_users?.[1]?.level || 0) % 1) * 100,
@@ -92,21 +100,25 @@ export default function ProfilScreen() {
                 </TouchableOpacity>
                 {expandedProjects[project.id] && (
                   <View style={styles.projectDetails}>
-                    <ThemedText style={styles.projectDetailText}>Status: {project.status}</ThemedText>
-                    <ThemedText style={styles.projectDetailText}>Validé: {project.validated ? 'Oui' : 'Non'}</ThemedText>
                     {project.teams && project.teams.length > 0 ? (
                       <>
-                        <ThemedText style={styles.projectDetailHeader}>Équipes:</ThemedText>
-                        {project.teams.map((team: { name: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; status: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; users: any[]; }, teamIndex: React.Key | null | undefined) => (
+                        {project.teams.slice().reverse().map((team: any, teamIndex: number) => (
                           <View key={teamIndex} style={styles.teamItem}>
-                            <ThemedText style={styles.teamName}>{team.name}</ThemedText>
-                            <ThemedText style={styles.teamStatus}>Status: {team.status}</ThemedText>
-                            <ThemedText style={styles.teamMark}>Note: {team.final_mark}</ThemedText>
-                            {team.users && team.users.length > 0 && (
-                              <ThemedText style={styles.teamMembers}>
-                                Membres: {team.users.map(user => user.login).join(', ')}
+                            <View style={styles.teamHeader}>
+                              <View style={styles.teamNameContainer}>
+                                <ThemedText style={styles.teamName}>
+                                  {team.name}
+                                  <ThemedText style={styles.teamDate}>
+                                    {' '}({new Date(team.created_at).toLocaleDateString('fr-FR')})
+                                  </ThemedText>
+                                </ThemedText>
+                              </View>
+                              <ThemedText style={styles.teamMark}>
+                                {team.final_mark !== undefined && team.final_mark !== null
+                                  ? team.final_mark
+                                  : "En cours"}
                               </ThemedText>
-                            )}
+                            </View>
                           </View>
                         ))}
                       </>
@@ -532,7 +544,17 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     marginBottom: 10,
   },
+  teamHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   teamName: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  teamMark: {
     color: 'white',
     fontSize: 14,
     fontWeight: 'bold',
@@ -541,13 +563,23 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 12,
   },
-  teamMark: {
-    color: 'white',
-    fontSize: 12,
-  },
   teamMembers: {
     color: 'white',
     fontSize: 12,
     fontStyle: 'italic',
+  },
+  teamNameContainer: {
+    flex: 1,
+    marginRight: 10,
+  },
+  teamName: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  teamDate: {
+    color: '#888',
+    fontSize: 12,
+    fontWeight: 'normal',
   },
 });

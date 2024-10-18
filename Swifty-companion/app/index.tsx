@@ -35,7 +35,7 @@ export default function HomeScreen() {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        let allProjects = [];
+        let allProjects: any[] = [];
         let page = 1;
         let hasMoreProjects = true;
 
