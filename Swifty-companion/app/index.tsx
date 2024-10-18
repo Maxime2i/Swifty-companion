@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { StyleSheet, Button, TextInput } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
-import { API_UID, API_SECRET } from '@env';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 
@@ -16,8 +15,8 @@ export default function HomeScreen() {
       try {
         const response = await axios.post('https://api.intra.42.fr/oauth/token', {
           grant_type: 'client_credentials',
-          client_id: API_UID,
-          client_secret: API_SECRET,
+          client_id: process.env.EXPO_PUBLIC_API_UID,
+          client_secret: process.env.EXPO_PUBLIC_API_SECRET,
         });
         setAccessToken(response.data.access_token);
         console.log(response.data.access_token);
