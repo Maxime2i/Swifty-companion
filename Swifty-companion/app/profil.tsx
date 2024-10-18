@@ -140,7 +140,7 @@ export default function ProfilScreen() {
   };
 
   const handleGoBack = () => {
-    router.replace('/');  // Redirige vers l'index
+    router.back();  // Utiliser router.back() au lieu de router.replace('/')
   };
 
   return (
@@ -150,9 +150,9 @@ export default function ProfilScreen() {
       <View style={styles.blackBackground} />
       <View style={styles.content}>
         <View style={styles.headerContainer}>
-          <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+          <TouchableOpacityGestureHandler onPress={handleGoBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
+          </TouchableOpacityGestureHandler>
           <ThemedText style={styles.headerTitle}>Profil 42</ThemedText>
         </View>
         {user ? (
@@ -287,16 +287,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 20 : 40,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     marginBottom: 20,
+    height: 60, // Ajout d'une hauteur fixe
   },
   backButton: {
     position: 'absolute',
     left: 10,
-    top: Platform.OS === 'android' ? StatusBar.currentHeight + 20 : 40,
+    top: Platform.OS === 'android' ? StatusBar.currentHeight : 10,
+    zIndex: 1, // Assure que le bouton est au-dessus des autres éléments
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: 'bold',
     color: 'white',
     textAlign: 'center',
