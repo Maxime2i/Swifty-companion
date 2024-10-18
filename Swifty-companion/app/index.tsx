@@ -31,17 +31,42 @@ export default function HomeScreen() {
   const getUserData = async () => {
     if (accessToken && login) {
       try {
-        const response = await axios.get(`https://api.intra.42.fr/v2/users/${login}`, {
+        const userResponse = await axios.get(`https://api.intra.42.fr/v2/users/${login}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
-        console.log('Données utilisateur:', response.data);
-        // Redirection vers la page de profil avec les données utilisateur
+
+        let allProjects = [];
+        let page = 1;
+        let hasMoreProjects = true;
+
+        while (hasMoreProjects) {
+          const projectsResponse = await axios.get(`https://api.intra.42.fr/v2/users/${login}/projects_users`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            params: { page: page, per_page: 100 } // Récupère 100 projets par page
+          });
+
+          allProjects = [...allProjects, ...projectsResponse.data];
+
+          if (projectsResponse.data.length < 100) {
+            hasMoreProjects = false;
+          } else {
+            page++;
+          }
+        }
+
+        console.log('Données utilisateur:', userResponse.data);
+        console.log('Tous les projets de l\'utilisateur:', allProjects);
+
+        // Redirection vers la page de profil avec les données utilisateur et tous les projets
         router.push({
           pathname: '/profil',
-          params: { userData: JSON.stringify(response.data) }
+          params: { 
+            userData: JSON.stringify(userResponse.data),
+            userProjects: JSON.stringify(allProjects)
+          }
         });
       } catch (error) {
-        console.error('Erreur lors de la récupération des données utilisateur:', error);
+        console.error('Erreur lors de la récupération des données:', error);
         // Afficher un message d'erreur à l'utilisateur ici
       }
     }
