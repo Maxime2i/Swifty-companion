@@ -5,15 +5,16 @@ import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { TouchableOpacity as TouchableOpacityGestureHandler } from 'react-native-gesture-handler';
+import { useRouter } from 'expo-router';
 
 const { height, width } = Dimensions.get('window');
 
 export default function ProfilScreen() {
+  const router = useRouter();
   const { userData, userProjects } = useLocalSearchParams();
   const [user, setUser] = useState<any>(null);
   const [projects, setProjects] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('about');
-  const animatedValue = useRef(new Animated.Value(0)).current;
   const levelProgressAnimation = useRef(new Animated.Value(0)).current;
   const [expandedProjects, setExpandedProjects] = useState<{ [key: string]: boolean }>({});
   const [selectedCursus, setSelectedCursus] = useState({ id: 0, name: '' });
@@ -48,23 +49,8 @@ export default function ProfilScreen() {
   }, [userData, userProjects]);
 
   const handleTabPress = (tab: string) => {
-    let toValue = 0;
-    if (tab === 'projects') toValue = 1;
-    if (tab === 'skills') toValue = 2;
-
-    Animated.timing(animatedValue, {
-      toValue,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-
     setActiveTab(tab);
   };
-
-  const backgroundPosition = animatedValue.interpolate({
-    inputRange: [0, 1, 2],
-    outputRange: ['0%', '33.33%', '66.66%'],
-  });
 
   const renderTabContent = () => {
     if (!user) return null;
@@ -153,6 +139,10 @@ export default function ProfilScreen() {
     }
   };
 
+  const handleGoBack = () => {
+    router.replace('/');  // Redirige vers l'index
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1E90FF" />
@@ -160,6 +150,9 @@ export default function ProfilScreen() {
       <View style={styles.blackBackground} />
       <View style={styles.content}>
         <View style={styles.headerContainer}>
+          <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
           <ThemedText style={styles.headerTitle}>Profil 42</ThemedText>
         </View>
         {user ? (
@@ -240,19 +233,18 @@ export default function ProfilScreen() {
         )}
         
         <View style={styles.tabContainer}>
-          <Animated.View style={[styles.animatedBackground, { left: backgroundPosition }]} />
           <TouchableOpacity
-            style={styles.tabButton}
+            style={[styles.tabButton, activeTab === 'about' && styles.activeTabButton]}
             onPress={() => handleTabPress('about')}>
             <ThemedText style={[styles.tabButtonText, activeTab === 'about' && styles.activeTabButtonText]}>About</ThemedText>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.tabButton}
+            style={[styles.tabButton, activeTab === 'projects' && styles.activeTabButton]}
             onPress={() => handleTabPress('projects')}>
             <ThemedText style={[styles.tabButtonText, activeTab === 'projects' && styles.activeTabButtonText]}>Projects</ThemedText>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.tabButton}
+            style={[styles.tabButton, activeTab === 'skills' && styles.activeTabButton]}
             onPress={() => handleTabPress('skills')}>
             <ThemedText style={[styles.tabButtonText, activeTab === 'skills' && styles.activeTabButtonText]}>Skills</ThemedText>
           </TouchableOpacity>
@@ -291,17 +283,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   headerContainer: {
-    width: width,
+    width: '100%',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 20 : 40,
     marginBottom: 20,
+  },
+  backButton: {
+    position: 'absolute',
+    left: 10,
+    top: Platform.OS === 'android' ? StatusBar.currentHeight + 20 : 40,
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
     color: 'white',
     textAlign: 'center',
+    flex: 1,
   },
   userInfoContainer: {
     backgroundColor: '#191919',
@@ -369,7 +368,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     backgroundColor: '#191919',
     borderRadius: 10,
-    padding: 20,
+    padding: 10,
     marginTop: 20,
   },
   statItem: {
@@ -399,13 +398,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     height: 40,
   },
-  animatedBackground: {
-    position: 'absolute',
-    width: '33.33%',
-    height: '100%',
-    backgroundColor: 'rgba(30, 144, 255, 0.2)',
-    borderRadius: 20,
-  },
   tabButton: {
     flex: 1,
     justifyContent: 'center',
@@ -415,9 +407,21 @@ const styles = StyleSheet.create({
   tabButtonText: {
     color: '#888',
     fontWeight: 'bold',
+    width: '90%',
+    height: '100%',
+    textAlignVertical: 'center',
+    textAlign: 'center',
+    backgroundColor: '#191919',
+    borderRadius: 20,
   },
   activeTabButtonText: {
     color: '#1E90FF',
+    width: '90%',
+    height: '100%',
+    textAlignVertical: 'center',
+    textAlign: 'center',
+    backgroundColor: 'rgba(30, 144, 255, 0.2)',
+    borderRadius: 20,
   },
   tabContent: {
     flex: 1,
@@ -506,7 +510,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#333',
-    padding: 10,
+    padding: 5,
+    paddingLeft: 10,
     borderRadius: 5,
   },
   cursusButtonText: {
@@ -525,7 +530,8 @@ const styles = StyleSheet.create({
     overflow: 'scroll',
   },
   cursusItem: {
-    padding: 10,
+    padding: 5,
+    paddingLeft: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#444',
   },
@@ -571,11 +577,6 @@ const styles = StyleSheet.create({
   teamNameContainer: {
     flex: 1,
     marginRight: 10,
-  },
-  teamName: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
   },
   teamDate: {
     color: '#888',
