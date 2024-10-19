@@ -18,31 +18,38 @@ export default function HomeScreen() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [login, setLogin] = useState<string>('');
   const [suggestions, setSuggestions] = useState<Array<{ login: string, imageLink: string }>>([]);
+  const [tokenExpiration, setTokenExpiration] = useState<number | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    const getAccessToken = async () => {
-      try {
-        const response = await axios.post('https://api.intra.42.fr/oauth/token', {
-          grant_type: 'client_credentials',
-          client_id: process.env.EXPO_PUBLIC_API_UID,
-          client_secret: process.env.EXPO_PUBLIC_API_SECRET,
-        });
-        setAccessToken(response.data.access_token);
-        console.log(response.data.access_token);
-      } catch (error) {
-        console.error('Erreur lors de l\'obtention du jeton d\'accès:', error);
-      }
-    };
+  const getNewAccessToken = async () => {
+    try {
+      const response = await axios.post('https://api.intra.42.fr/oauth/token', {
+        grant_type: 'client_credentials',
+        client_id: process.env.EXPO_PUBLIC_API_UID,
+        client_secret: process.env.EXPO_PUBLIC_API_SECRET,
+      });
+      setAccessToken(response.data.access_token);
+      setTokenExpiration(Date.now() + response.data.expires_in * 1000);
+    } catch (error) {
+      console.error('Erreur lors de l\'obtention du jeton d\'accès:', error);
+    }
+  };
 
-    getAccessToken();
+  useEffect(() => {
+    getNewAccessToken();
   }, []);
+
+  const checkAndRefreshToken = async () => {
+    if (!tokenExpiration || Date.now() >= tokenExpiration) {
+      await getNewAccessToken();
+    }
+  };
 
   const debouncedGetSuggestions = useMemo(
     () => debounce(async (text: string) => {
+      await checkAndRefreshToken();
       if (accessToken && text.length > 0) {
         try {
-          console.log(`Recherche de suggestions pour: "${text}"`);
           const response = await axios.get(`https://api.intra.42.fr/v2/users`, {
             headers: { Authorization: `Bearer ${accessToken}` },
             params: { 
@@ -52,17 +59,14 @@ export default function HomeScreen() {
             }
           });
           
-          console.log('Réponse de l\'API:', response.data);
           
           if (response.data && Array.isArray(response.data)) {
             const newSuggestions = response.data.map((user: any) => ({
               login: user.login,
               imageLink: user.image.link
             }));
-            console.log('Suggestions trouvées:', newSuggestions);
             setSuggestions(newSuggestions);
           } else {
-            console.log('Aucune suggestion trouvée ou format de réponse inattendu');
             setSuggestions([]);
           }
         } catch (error) {
@@ -77,15 +81,13 @@ export default function HomeScreen() {
           setSuggestions([]);
         }
       } else {
-        console.log('Pas de recherche: token manquant ou texte vide');
         setSuggestions([]);
       }
     }, 300),
-    [accessToken]
+    [accessToken, tokenExpiration]
   );
 
   const handleLoginChange = (text: string) => {
-    console.log('Texte saisi:', text);
     setLogin(text);
     debouncedGetSuggestions(text);
   };
@@ -94,7 +96,6 @@ export default function HomeScreen() {
     try {
       setLogin(suggestion.login);
       setSuggestions([]);
-      console.log(`Sélection de l'utilisateur: ${suggestion.login}`);
       await getUserData(suggestion.login);
     } catch (error) {
       console.error('Erreur lors de la sélection de la suggestion:', error);
@@ -102,13 +103,14 @@ export default function HomeScreen() {
   };
 
   const getUserData = async (selectedLogin: string) => {
+    await checkAndRefreshToken();
     if (accessToken && selectedLogin) {
       try {
-        console.log(`Récupération des données pour: ${selectedLogin}`);
         const userResponse = await axios.get(`https://api.intra.42.fr/v2/users/${selectedLogin}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
+        // Récupération de tous les projets (code inchangé)
         let allProjects: any[] = [];
         let page = 1;
         let hasMoreProjects = true;
@@ -118,7 +120,7 @@ export default function HomeScreen() {
             headers: { Authorization: `Bearer ${accessToken}` },
             params: { page: page, per_page: 100 }
           });
-
+          
           allProjects = [...allProjects, ...projectsResponse.data];
 
           if (projectsResponse.data.length < 100) {
@@ -128,14 +130,37 @@ export default function HomeScreen() {
           }
         }
 
-        console.log('Données utilisateur récupérées, redirection vers le profil');
+        // Nouvelle logique pour récupérer toutes les corrections
+        let allCorrections: any[] = [];
+        page = 1;
+        let hasMoreCorrections = true;
+
+        while (hasMoreCorrections) {
+          const correctionsResponse = await axios.get(`https://api.intra.42.fr/v2/users/${selectedLogin}/scale_teams/as_corrected`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            params: { page: page, per_page: 100 }
+          });
+          
+          allCorrections = [...allCorrections, ...correctionsResponse.data];
+
+          if (correctionsResponse.data.length < 100) {
+            hasMoreCorrections = false;
+          } else {
+            page++;
+          }
+        }
+
         router.push({
           pathname: '/profil',
           params: { 
             userData: JSON.stringify(userResponse.data),
-            userProjects: JSON.stringify(allProjects)
+            userProjects: JSON.stringify(allProjects),
+            userCorrections: JSON.stringify(allCorrections),
           }
         });
+
+        // Réinitialiser le login après la navigation
+        setLogin('');
       } catch (error) {
         console.error('Erreur lors de la récupération des données:', error);
         // Afficher un message d'erreur à l'utilisateur ici

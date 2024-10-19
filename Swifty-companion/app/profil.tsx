@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, View, Dimensions, SafeAreaView, StatusBar, Platform, Image, TouchableOpacity, ScrollView, Animated } from 'react-native';
+import { StyleSheet, View, Dimensions, SafeAreaView, StatusBar, Platform, Image, TouchableOpacity, ScrollView, Animated, FlatList } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,9 +9,17 @@ import { useRouter } from 'expo-router';
 
 const { height, width } = Dimensions.get('window');
 
+type Coequipiers = {
+  [key: string]: number;
+};
+
+type Correctors = {
+  [key: string]: number;
+};
+
 export default function ProfilScreen() {
   const router = useRouter();
-  const { userData, userProjects } = useLocalSearchParams();
+  const { userData, userProjects, userCorrections } = useLocalSearchParams();
   const [user, setUser] = useState<any>(null);
   const [projects, setProjects] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('about');
@@ -19,15 +27,31 @@ export default function ProfilScreen() {
   const [expandedProjects, setExpandedProjects] = useState<{ [key: string]: boolean }>({});
   const [selectedCursus, setSelectedCursus] = useState({ id: 0, name: '' });
   const [isCursusOpen, setIsCursusOpen] = useState(false);
+  const [coequipier, setCoequipier] = useState<Coequipiers>({});
+  const [correctors, setCorrectors] = useState<Correctors>({});
+  const [showBasicInfo, setShowBasicInfo] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (userData && userProjects) {
+    console.log("test")
+    if (userData && userProjects && userCorrections) {
+      console.log("2")
+      setIsLoading(true);
       try {
         const parsedUserData = JSON.parse(userData as string);
         const parsedUserProjects = JSON.parse(userProjects as string);
+        const parsedUserCorrections = JSON.parse(userCorrections as string);
         setUser(parsedUserData);
         setProjects(parsedUserProjects);
         
+        // Calculer les coéquipiers
+        const coequipierStats = calculateCoequipiers(parsedUserProjects, parsedUserData.login);
+        setCoequipier(coequipierStats);
+
+        // Traiter les corrections
+        const correctorStats = calculateCorrectors(parsedUserCorrections);
+        setCorrectors(correctorStats);
+
         // Sélectionner le cursus avec l'ID le plus élevé par défaut
         if (parsedUserData.cursus_users && parsedUserData.cursus_users.length > 0) {
           const defaultCursus = parsedUserData.cursus_users.reduce((prev: any, current: any) => {
@@ -44,9 +68,11 @@ export default function ProfilScreen() {
         }).start();
       } catch (error) {
         console.error('Erreur lors de l\'analyse des données:', error);
+      } finally {
+        setIsLoading(false);
       }
     }
-  }, [userData, userProjects]);
+  }, [userData, userProjects, userCorrections]);
 
   const handleTabPress = (tab: string) => {
     setActiveTab(tab);
@@ -59,10 +85,80 @@ export default function ProfilScreen() {
       case 'about':
         return (
           <View>
-            <ThemedText style={styles.tabContentText}>Email: {user.email || 'Non disponible'}</ThemedText>
-            <ThemedText style={styles.tabContentText}>Téléphone: {user.phone || 'Caché'}</ThemedText>
-            <ThemedText style={styles.tabContentText}>Campus: {user.campus?.map((campus: { name: string; }) => campus.name).join(', ') || 'Non spécifié'}</ThemedText>
-            <ThemedText style={styles.tabContentText}>Localisation: {user.location || 'Non disponible'}</ThemedText>
+            <View style={styles.aboutToggle}>
+              <TouchableOpacity
+                style={[styles.toggleButton, showBasicInfo && styles.activeToggleButton]}
+                onPress={() => setShowBasicInfo(true)}
+              >
+                <ThemedText style={styles.toggleButtonText}>Infos de base</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.toggleButton, !showBasicInfo && styles.activeToggleButton]}
+                onPress={() => setShowBasicInfo(false)}
+              >
+                <ThemedText style={styles.toggleButtonText}>Stats globales</ThemedText>
+              </TouchableOpacity>
+            </View>
+            {showBasicInfo ? (
+              <View>
+                <ThemedText style={styles.tabContentText}>Email: {user.email || 'Non disponible'}</ThemedText>
+                <ThemedText style={styles.tabContentText}>Téléphone: {user.phone || 'Caché'}</ThemedText>
+                <ThemedText style={styles.tabContentText}>Campus: {user.campus?.map((campus: { name: string; }) => campus.name).join(', ') || 'Non spécifié'}</ThemedText>
+                <ThemedText style={styles.tabContentText}>Localisation: {user.location || 'Non disponible'}</ThemedText>
+              </View>
+            ) : (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsSlider}>
+                <View style={styles.statCard}>
+                  <ThemedText style={styles.statTitle}>Moyenne des projets</ThemedText>
+                  <ThemedText style={styles.statValue}>
+                    {(projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null)
+                      .reduce((sum, p) => sum + p.final_mark, 0) / 
+                      projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null).length
+                    ).toFixed(2)}
+                  </ThemedText>
+                </View>
+                <View style={styles.statCard}>
+                  <ThemedText style={styles.statTitle}>Jours depuis inscription</ThemedText>
+                  <ThemedText style={styles.statValue}>
+                    {Math.floor((new Date().getTime() - new Date(user.created_at).getTime()) / (1000 * 3600 * 24))}
+                  </ThemedText>
+                </View>
+                <View style={styles.statCard}>
+                  <ThemedText style={styles.statTitle}>Top 3 coéquipiers</ThemedText>
+                  <FlatList
+                    data={coequipier ? Object.entries(coequipier).sort((a, b) => b[1] - a[1]).slice(0, 3) : []}
+                    renderItem={({ item: [login, count], index }) => (
+                      <View style={styles.coequipierItem}>
+                        <ThemedText style={styles.coequipierRank}>{index + 1}</ThemedText>
+                        <ThemedText style={styles.coequipierLogin}>{login}</ThemedText>
+                        <ThemedText style={styles.coequipierCount}> ({count})</ThemedText>
+                      </View>
+                    )}
+                    keyExtractor={(item, index) => index.toString()}
+                    ListEmptyComponent={
+                      <ThemedText style={styles.coequipierText}>Aucun coéquipier trouvé</ThemedText>
+                    }
+                  />
+                </View>
+                <View style={styles.statCard}>
+                  <ThemedText style={styles.statTitle}>Top 3 correcteurs</ThemedText>
+                  <FlatList
+                    data={correctors ? Object.entries(correctors).sort((a, b) => b[1] - a[1]).slice(0, 3) : []}
+                    renderItem={({ item: [login, count], index }) => (
+                      <View style={styles.coequipierItem}>
+                        <ThemedText style={styles.coequipierRank}>{index + 1}</ThemedText>
+                        <ThemedText style={styles.coequipierLogin}>{login}</ThemedText>
+                        <ThemedText style={styles.coequipierCount}> ({count})</ThemedText>
+                      </View>
+                    )}
+                    keyExtractor={(item, index) => index.toString()}
+                    ListEmptyComponent={
+                      <ThemedText style={styles.coequipierText}>Aucun correcteur trouvé</ThemedText>
+                    }
+                  />
+                </View>
+              </ScrollView>
+            )}
           </View>
         );
       case 'projects':
@@ -141,6 +237,33 @@ export default function ProfilScreen() {
 
   const handleGoBack = () => {
     router.back();  // Utiliser router.back() au lieu de router.replace('/')
+  };
+
+  // Fonction pour calculer les coéquipiers
+  const calculateCoequipiers = (projects: any, userLogin: any) => {
+    let coequipierStats: { [key: string]: number } = {};
+    projects.forEach((project: any) => {
+      if (project.teams && project.teams.length > 0) {
+        project.teams.forEach((team) => {
+          team.users.forEach((user) => {
+            if (user.login !== userLogin) {
+              coequipierStats[user.login] = (coequipierStats[user.login] || 0) + 1;
+            }
+          });
+        });
+      }
+    });
+    return coequipierStats;
+  };
+
+  // Fonction pour calculer les correcteurs
+  const calculateCorrectors = (corrections: any) => {
+    let correctorStats: { [key: string]: number } = {};
+    corrections.forEach((correction: any) => {
+      const correctorLogin = correction.corrector.login;
+      correctorStats[correctorLogin] = (correctorStats[correctorLogin] || 0) + 1;
+    });
+    return correctorStats;
   };
 
   return (
@@ -584,5 +707,68 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 12,
     fontWeight: 'normal',
+  },
+  statsSlider: {
+    marginTop: 10,
+  },
+  statCard: {
+    backgroundColor: '#333',
+    borderRadius: 10,
+    padding: 15,
+    marginRight: 10,
+    width: 150,
+    height: 150,
+  },
+  statTitle: {
+    color: '#888',
+    fontSize: 14,
+    marginBottom: 5,
+  },
+  statValue: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  aboutToggle: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  toggleButton: {
+    flex: 1,
+    padding: 10,
+    alignItems: 'center',
+    backgroundColor: '#333',
+    borderRadius: 15,
+    marginHorizontal: 10,
+  },
+  activeToggleButton: {
+    backgroundColor: '#3A96FF',
+  },
+  toggleButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  coequipierText: {
+    color: 'white',
+    fontSize: 14,
+  },
+  coequipierItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: -2,
+  },
+  coequipierRank: {
+    color: '#888',
+    fontSize: 14,
+    marginRight: 5,
+  },
+  coequipierLogin: {
+    color: 'white',
+    fontSize: 14,
+  },
+  coequipierCount: {
+    color: '#FFF',
+    fontSize: 14,
   },
 });
