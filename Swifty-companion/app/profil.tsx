@@ -7,6 +7,7 @@ import { Picker } from '@react-native-picker/picker';
 import { TouchableOpacity as TouchableOpacityGestureHandler } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 
 const { height, width } = Dimensions.get('window');
 
@@ -34,6 +35,7 @@ export default function ProfilScreen() {
   const [showBasicInfo, setShowBasicInfo] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [projectsLoaded, setProjectsLoaded] = useState(false);
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     if (userData && accessToken) {
@@ -129,26 +131,26 @@ export default function ProfilScreen() {
                 style={[styles.toggleButton, showBasicInfo && styles.activeToggleButton]}
                 onPress={() => setShowBasicInfo(true)}
               >
-                <ThemedText style={styles.toggleButtonText}>Infos de base</ThemedText>
+                <ThemedText style={styles.toggleButtonText}>{t('Infos de base')}</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.toggleButton, !showBasicInfo && styles.activeToggleButton]}
                 onPress={() => setShowBasicInfo(false)}
               >
-                <ThemedText style={styles.toggleButtonText}>Stats globales</ThemedText>
+                <ThemedText style={styles.toggleButtonText}>{t('Stats globales')}</ThemedText>
               </TouchableOpacity>
             </View>
             {showBasicInfo ? (
               <View>
-                <ThemedText style={styles.tabContentText}>Email: {user.email || 'Non disponible'}</ThemedText>
-                <ThemedText style={styles.tabContentText}>Téléphone: {user.phone || 'Caché'}</ThemedText>
-                <ThemedText style={styles.tabContentText}>Campus: {user.campus?.map((campus: { name: string; }) => campus.name).join(', ') || 'Non spécifié'}</ThemedText>
-                <ThemedText style={styles.tabContentText}>Localisation: {user.location || 'Non disponible'}</ThemedText>
+                <ThemedText style={styles.tabContentText}>{t('Email')}: {user.email || t('Non disponible')}</ThemedText>
+                <ThemedText style={styles.tabContentText}>{t('Téléphone')}: {user.phone || t('Caché')}</ThemedText>
+                <ThemedText style={styles.tabContentText}>{t('Campus')}: {user.campus?.map((campus: { name: string; }) => campus.name).join(', ') || t('Non spécifié')}</ThemedText>
+                <ThemedText style={styles.tabContentText}>{t('Localisation')}: {user.location || t('Non disponible')}</ThemedText>
               </View>
             ) : (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsSlider}>
                 <View style={styles.statCard}>
-                  <ThemedText style={styles.statTitle}>Moyenne des projets</ThemedText>
+                  <ThemedText style={styles.statTitle}>{t('Moyenne des projets')}</ThemedText>
                   <ThemedText style={styles.statValue}>
                     {(projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null)
                       .reduce((sum, p) => sum + p.final_mark, 0) / 
@@ -157,13 +159,13 @@ export default function ProfilScreen() {
                   </ThemedText>
                 </View>
                 <View style={styles.statCard}>
-                  <ThemedText style={styles.statTitle}>Jours depuis inscription</ThemedText>
+                  <ThemedText style={styles.statTitle}>{t('Jours depuis inscription')}</ThemedText>
                   <ThemedText style={styles.statValue}>
                     {Math.floor((new Date().getTime() - new Date(user.created_at).getTime()) / (1000 * 3600 * 24))}
                   </ThemedText>
                 </View>
                 <View style={styles.statCard}>
-                  <ThemedText style={styles.statTitle}>Top 3 coéquipiers</ThemedText>
+                  <ThemedText style={styles.statTitle}>{t('Top 3 coéquipiers')}</ThemedText>
                   <FlatList
                     data={coequipier ? Object.entries(coequipier).sort((a, b) => b[1] - a[1]).slice(0, 3) : []}
                     renderItem={({ item: [login, count], index }) => (
@@ -175,12 +177,12 @@ export default function ProfilScreen() {
                     )}
                     keyExtractor={(item, index) => index.toString()}
                     ListEmptyComponent={
-                      <ThemedText style={styles.coequipierText}>Aucun coéquipier trouvé</ThemedText>
+                      <ThemedText style={styles.coequipierText}>{t('Aucun coéquipier trouvé')}</ThemedText>
                     }
                   />
                 </View>
                 <View style={styles.statCard}>
-                  <ThemedText style={styles.statTitle}>Top 3 correcteurs</ThemedText>
+                  <ThemedText style={styles.statTitle}>{t('Top 3 correcteurs')}</ThemedText>
                   <FlatList
                     data={correctors ? Object.entries(correctors).sort((a, b) => b[1] - a[1]).slice(0, 3) : []}
                     renderItem={({ item: [login, count], index }) => (
@@ -192,7 +194,7 @@ export default function ProfilScreen() {
                     )}
                     keyExtractor={(item, index) => index.toString()}
                     ListEmptyComponent={
-                      <ThemedText style={styles.coequipierText}>Aucun correcteur trouvé</ThemedText>
+                      <ThemedText style={styles.coequipierText}>{t('Aucun correcteur trouvé')}</ThemedText>
                     }
                   />
                 </View>
@@ -244,12 +246,12 @@ export default function ProfilScreen() {
                         ))}
                       </>
                     ) : (
-                      <ThemedText style={styles.projectDetailText}>Aucune équipe pour ce projet</ThemedText>
+                      <ThemedText style={styles.projectDetailText}>{t('Aucune équipe pour ce projet')}</ThemedText>
                     )}
                   </View>
                 )}
               </View>
-            )) || <ThemedText style={styles.tabContentText}>Aucun projet disponible pour ce cursus</ThemedText>}
+            )) || <ThemedText style={styles.tabContentText}>{t('Aucun projet disponible pour ce cursus')}</ThemedText>}
           </ScrollView>
         );
       case 'skills':
@@ -266,7 +268,7 @@ export default function ProfilScreen() {
                   <View style={[styles.skillBar, { width: `${(skill.level / 20) * 100}%` }]} />
                 </View>
               </View>
-            )) || <ThemedText style={styles.tabContentText}>Aucune compétence disponible pour ce cursus</ThemedText>}
+            )) || <ThemedText style={styles.tabContentText}>{t('Aucune compétence disponible pour ce cursus')}</ThemedText>}
           </ScrollView>
         );
       default:
@@ -283,7 +285,7 @@ export default function ProfilScreen() {
     let coequipierStats: { [key: string]: number } = {};
     projects.forEach((project: any) => {
       if (project.teams && project.teams.length > 0) {
-        project.teams.forEach((team) => {
+        project.teams.forEach((team: { users: any[]; }) => {
           team.users.forEach((user) => {
             if (user.login !== userLogin) {
               coequipierStats[user.login] = (coequipierStats[user.login] || 0) + 1;
@@ -315,7 +317,7 @@ export default function ProfilScreen() {
           <TouchableOpacityGestureHandler onPress={handleGoBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="white" />
           </TouchableOpacityGestureHandler>
-          <ThemedText style={styles.headerTitle}>Profil 42</ThemedText>
+          <ThemedText style={styles.headerTitle}>{t('Profil 42')}</ThemedText>
         </View>
         {user ? (
           <>
@@ -382,37 +384,37 @@ export default function ProfilScreen() {
                 ) : (
                   <ThemedText style={styles.statNumber}>-</ThemedText>
                 )}
-                <ThemedText style={styles.statLabel}>Projets</ThemedText>
+                <ThemedText style={styles.statLabel}>{t('Projets')}</ThemedText>
               </View>
               <View style={styles.statItem}>
                 <ThemedText style={styles.statNumber}>{user.correction_point || 0}</ThemedText>
-                <ThemedText style={styles.statLabel}>Evaluation points</ThemedText>
+                <ThemedText style={styles.statLabel}>{t('Points d\'évaluation')}</ThemedText>
               </View>
               <View style={styles.statItem}>
                 <ThemedText style={styles.statNumber}>{user.wallet || 0}</ThemedText>
-                <ThemedText style={styles.statLabel}>Wallet</ThemedText>
+                <ThemedText style={styles.statLabel}>{t('Portefeuille')}</ThemedText>
               </View>
             </View>
           </>
         ) : (
-          <ThemedText style={styles.text}>Chargement des données...</ThemedText>
+          <ThemedText style={styles.text}>{t('Chargement des données...')}</ThemedText>
         )}
         
         <View style={styles.tabContainer}>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === 'about' && styles.activeTabButton]}
             onPress={() => handleTabPress('about')}>
-            <ThemedText style={[styles.tabButtonText, activeTab === 'about' && styles.activeTabButtonText]}>About</ThemedText>
+            <ThemedText style={[styles.tabButtonText, activeTab === 'about' && styles.activeTabButtonText]}>{t('À propos')}</ThemedText>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === 'projects' && styles.activeTabButton]}
             onPress={() => handleTabPress('projects')}>
-            <ThemedText style={[styles.tabButtonText, activeTab === 'projects' && styles.activeTabButtonText]}>Projects</ThemedText>
+            <ThemedText style={[styles.tabButtonText, activeTab === 'projects' && styles.activeTabButtonText]}>{t('Projets')}</ThemedText>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === 'skills' && styles.activeTabButton]}
             onPress={() => handleTabPress('skills')}>
-            <ThemedText style={[styles.tabButtonText, activeTab === 'skills' && styles.activeTabButtonText]}>Skills</ThemedText>
+            <ThemedText style={[styles.tabButtonText, activeTab === 'skills' && styles.activeTabButtonText]}>{t('Compétences')}</ThemedText>
           </TouchableOpacity>
         </View>
         <View style={styles.tabContent}>

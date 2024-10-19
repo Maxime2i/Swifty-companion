@@ -5,6 +5,8 @@ import { ThemedText } from '@/components/ThemedText';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
   let timeoutId: NodeJS.Timeout;
@@ -20,6 +22,7 @@ export default function HomeScreen() {
   const [suggestions, setSuggestions] = useState<Array<{ login: string, imageLink: string }>>([]);
   const [tokenExpiration, setTokenExpiration] = useState<number | null>(null);
   const router = useRouter();
+  const { t, i18n } = useTranslation();
 
   const getNewAccessToken = async () => {
     try {
@@ -140,15 +143,22 @@ export default function HomeScreen() {
     </TouchableOpacity>
   );
 
+  const toggleLanguage = () => {
+    i18n.changeLanguage(i18n.language === 'en' ? 'fr' : 'en');
+  };
+
   return (
     <ThemedView style={styles.container}>
+      <TouchableOpacity onPress={toggleLanguage} style={styles.languageToggle}>
+        <ThemedText style={styles.languageToggleText}>{i18n.language.toUpperCase()}</ThemedText>
+      </TouchableOpacity>
       <View style={styles.topSection}>
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.input}
             onChangeText={handleLoginChange}
             value={login}
-            placeholder="Entrez le login"
+            placeholder={t('enterLogin')}
             placeholderTextColor="#888"
           />
           <TouchableOpacity onPress={() => getUserData(login)} style={styles.searchButton}>
@@ -159,13 +169,11 @@ export default function HomeScreen() {
           <FlatList
             data={suggestions}
             renderItem={renderSuggestion}
-            keyExtractor={(item) => item.login}
+            keyExtractor={(item: { login: string; }) => item.login}
             style={styles.suggestionsList}
           />
         )}
       </View>
-      {/* Vous pouvez ajouter ce log temporaire pour vérifier les suggestions */}
-      <ThemedText>Suggestions: {JSON.stringify(suggestions)}</ThemedText>
     </ThemedView>
   );
 }
@@ -175,8 +183,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#121212',
   },
+  languageToggle: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    padding: 5,
+    backgroundColor: '#191919',
+    borderRadius: 5,
+  },
+  languageToggleText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: 'white',
+  },
   topSection: {
-    paddingTop: 160,
+    paddingTop: 120,
     alignItems: 'center',
   },
   searchContainer: {
@@ -185,6 +206,7 @@ const styles = StyleSheet.create({
     width: '80%',
     backgroundColor: '#191919',
     borderRadius: 5,
+    marginTop: 100,
   },
   input: {
     flex: 1,
@@ -196,7 +218,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   suggestionsList: {
-    maxHeight: 200, // Limitez la hauteur de la liste si nécessaire
+    maxHeight: 200,
     width: '80%',
     paddingTop: 10,
   },
