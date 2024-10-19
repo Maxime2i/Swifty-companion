@@ -110,52 +110,11 @@ export default function HomeScreen() {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        // Récupération de tous les projets (code inchangé)
-        let allProjects: any[] = [];
-        let page = 1;
-        let hasMoreProjects = true;
-
-        while (hasMoreProjects) {
-          const projectsResponse = await axios.get(`https://api.intra.42.fr/v2/users/${selectedLogin}/projects_users`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-            params: { page: page, per_page: 100 }
-          });
-          
-          allProjects = [...allProjects, ...projectsResponse.data];
-
-          if (projectsResponse.data.length < 100) {
-            hasMoreProjects = false;
-          } else {
-            page++;
-          }
-        }
-
-        // Nouvelle logique pour récupérer toutes les corrections
-        let allCorrections: any[] = [];
-        page = 1;
-        let hasMoreCorrections = true;
-
-        while (hasMoreCorrections) {
-          const correctionsResponse = await axios.get(`https://api.intra.42.fr/v2/users/${selectedLogin}/scale_teams/as_corrected`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-            params: { page: page, per_page: 100 }
-          });
-          
-          allCorrections = [...allCorrections, ...correctionsResponse.data];
-
-          if (correctionsResponse.data.length < 100) {
-            hasMoreCorrections = false;
-          } else {
-            page++;
-          }
-        }
-
         router.push({
           pathname: '/profil',
           params: { 
             userData: JSON.stringify(userResponse.data),
-            userProjects: JSON.stringify(allProjects),
-            userCorrections: JSON.stringify(allCorrections),
+            accessToken: accessToken,
           }
         });
 

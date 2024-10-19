@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { TouchableOpacity as TouchableOpacityGestureHandler } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
+import axios from 'axios';
 
 const { height, width } = Dimensions.get('window');
 
@@ -19,9 +20,10 @@ type Correctors = {
 
 export default function ProfilScreen() {
   const router = useRouter();
-  const { userData, userProjects, userCorrections } = useLocalSearchParams();
+  const { userData, accessToken } = useLocalSearchParams();
   const [user, setUser] = useState<any>(null);
   const [projects, setProjects] = useState<any[]>([]);
+  const [corrections, setCorrections] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('about');
   const levelProgressAnimation = useRef(new Animated.Value(0)).current;
   const [expandedProjects, setExpandedProjects] = useState<{ [key: string]: boolean }>({});
@@ -31,26 +33,14 @@ export default function ProfilScreen() {
   const [correctors, setCorrectors] = useState<Correctors>({});
   const [showBasicInfo, setShowBasicInfo] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [projectsLoaded, setProjectsLoaded] = useState(false);
 
   useEffect(() => {
-    console.log("test")
-    if (userData && userProjects && userCorrections) {
-      console.log("2")
+    if (userData && accessToken) {
       setIsLoading(true);
       try {
         const parsedUserData = JSON.parse(userData as string);
-        const parsedUserProjects = JSON.parse(userProjects as string);
-        const parsedUserCorrections = JSON.parse(userCorrections as string);
         setUser(parsedUserData);
-        setProjects(parsedUserProjects);
-        
-        // Calculer les coéquipiers
-        const coequipierStats = calculateCoequipiers(parsedUserProjects, parsedUserData.login);
-        setCoequipier(coequipierStats);
-
-        // Traiter les corrections
-        const correctorStats = calculateCorrectors(parsedUserCorrections);
-        setCorrectors(correctorStats);
 
         // Sélectionner le cursus avec l'ID le plus élevé par défaut
         if (parsedUserData.cursus_users && parsedUserData.cursus_users.length > 0) {
@@ -66,13 +56,62 @@ export default function ProfilScreen() {
           duration: 1000,
           useNativeDriver: false,
         }).start();
+
+        // Récupérer les projets et les corrections
+        fetchProjectsAndCorrections(parsedUserData.login, accessToken as string);
       } catch (error) {
         console.error('Erreur lors de l\'analyse des données:', error);
       } finally {
         setIsLoading(false);
       }
     }
-  }, [userData, userProjects, userCorrections]);
+  }, [userData, accessToken]);
+
+  const fetchProjectsAndCorrections = async (login: string, token: string) => {
+    try {
+      const allProjects = await fetchAllPages(`https://api.intra.42.fr/v2/users/${login}/projects_users`, token);
+      const allCorrections = await fetchAllPages(`https://api.intra.42.fr/v2/users/${login}/scale_teams/as_corrected`, token);
+
+      setProjects(allProjects);
+      setCorrections(allCorrections);
+
+      // Calculer les coéquipiers
+      const coequipierStats = calculateCoequipiers(allProjects, login);
+      setCoequipier(coequipierStats);
+
+      // Traiter les corrections
+      const correctorStats = calculateCorrectors(allCorrections);
+      setCorrectors(correctorStats);
+
+      // Indiquer que les projets ont été chargés
+      setProjectsLoaded(true);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des projets et corrections:', error);
+    }
+  };
+
+  const fetchAllPages = async (url: string, token: string) => {
+    let allData: any[] = [];
+    let page = 1;
+    let hasMoreData = true;
+
+    while (hasMoreData) {
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { page: page, per_page: 100 }
+      });
+      
+      allData = [...allData, ...response.data];
+
+      if (response.data.length < 100) {
+        hasMoreData = false;
+      } else {
+        page++;
+      }
+    }
+
+    return allData;
+  };
 
   const handleTabPress = (tab: string) => {
     setActiveTab(tab);
@@ -338,7 +377,11 @@ export default function ProfilScreen() {
             </View>
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <ThemedText style={styles.statNumber}>{projects.length || 0}</ThemedText>
+                {projectsLoaded ? (
+                  <ThemedText style={styles.statNumber}>{projects.length}</ThemedText>
+                ) : (
+                  <ThemedText style={styles.statNumber}>-</ThemedText>
+                )}
                 <ThemedText style={styles.statLabel}>Projets</ThemedText>
               </View>
               <View style={styles.statItem}>
