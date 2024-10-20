@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { StyleSheet, TextInput, View, TouchableOpacity, FlatList, Image } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -21,6 +21,9 @@ export default function HomeScreen() {
   const [login, setLogin] = useState<string>('');
   const [suggestions, setSuggestions] = useState<Array<{ login: string, imageLink: string }>>([]);
   const [tokenExpiration, setTokenExpiration] = useState<number | null>(null);
+  const [recentProjects, setRecentProjects] = useState<Array<{ name: string, final_mark: number }>>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { t, i18n } = useTranslation();
 
@@ -37,10 +40,6 @@ export default function HomeScreen() {
       console.error('Erreur lors de l\'obtention du jeton d\'accès:', error);
     }
   };
-
-  useEffect(() => {
-    getNewAccessToken();
-  }, []);
 
   const checkAndRefreshToken = async () => {
     if (!tokenExpiration || Date.now() >= tokenExpiration) {
@@ -130,18 +129,59 @@ export default function HomeScreen() {
     }
   };
 
-  const renderSuggestion = ({ item }: { item: { login: string, imageLink: string } }) => (
-    <TouchableOpacity 
-      onPress={() => selectSuggestion(item)}
-      style={styles.suggestionItem}
-      activeOpacity={0.7}
-    >
-      <View style={styles.suggestionContent}>
-        <Image source={{ uri: item.imageLink }} style={styles.suggestionImage} />
-        <ThemedText style={styles.suggestionText}>{item.login}</ThemedText>
-      </View>
-    </TouchableOpacity>
-  );
+  const getRecentProjects = useCallback(async () => {
+    if (!accessToken || !isLoading) return;
+
+    try {
+      setIsLoading(true);
+      const currentDate = new Date();
+      const twoDaysAgo = new Date(currentDate.setDate(currentDate.getDate() - 2));
+      const formattedStartDate = twoDaysAgo.toISOString().split('T')[0];
+      const formattedEndDate = new Date().toISOString().split('T')[0];
+
+      const response = await axios.get('https://api.intra.42.fr/v2/projects_users', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        params: {
+          'filter[marked]': true,
+          'range[updated_at]': `${formattedStartDate},${formattedEndDate}`,
+          'page[size]': 100,
+        }
+      });
+
+      // Trier les projets par ordre décroissant de updated_at
+      response.data.sort((a: any, b: any) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime());
+
+      const test = response.data.filter((project: any) => project["validated?"]);
+
+      const recentProjectsData = test
+        .slice(0, 5)
+        .map((project: any) => ({
+          name: project.project.name,
+          final_mark: project.final_mark,
+          login: project.user.login,
+          date: project.updated_at
+        }));
+
+        
+
+      setRecentProjects(recentProjectsData);
+      setRefreshKey(prevKey => prevKey + 1);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des projets récents:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    getNewAccessToken();
+  }, []);
+
+  useEffect(() => {
+    if (accessToken) {
+      getRecentProjects();
+    }
+  }, [accessToken, getRecentProjects]);
 
   const toggleLanguage = () => {
     i18n.changeLanguage(i18n.language === 'en' ? 'fr' : 'en');
@@ -173,6 +213,18 @@ export default function HomeScreen() {
             style={styles.suggestionsList}
           />
         )}
+        <View style={styles.recentProjectsContainer}>
+          <ThemedText style={styles.recentProjectsTitle}>{t('recentProjects')}:</ThemedText>
+          {isLoading ? (
+            <ThemedText>{t('loading')}</ThemedText>
+          ) : (
+            recentProjects.map((project, index) => (
+              <ThemedText key={`${index}-${refreshKey}`} style={styles.projectItem}>
+                {new Date(project.date).toLocaleString(i18n.language, { dateStyle: 'short', timeStyle: 'short' })} - {project.name} - {t('finalMark')}: {project.final_mark} {t('by')} {project.login}
+              </ThemedText>
+            ))
+          )}
+        </View>
       </View>
     </ThemedView>
   );
@@ -239,6 +291,21 @@ const styles = StyleSheet.create({
   },
   suggestionText: {
     fontSize: 16,
+    color: 'white',
+  },
+  recentProjectsContainer: {
+    marginTop: 20,
+    width: '80%',
+  },
+  recentProjectsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: 'white',
+  },
+  projectItem: {
+    fontSize: 14,
+    marginBottom: 5,
     color: 'white',
   },
 });

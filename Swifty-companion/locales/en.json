@@ -28,5 +28,9 @@
     "Aucun projet disponible pour ce cursus": "No projects available for this curriculum",
     "Aucune compétence disponible pour ce cursus": "No skills available for this curriculum",
     "Sélectionner un cursus": "Select a curriculum",
-    "Level": "Level"
+    "Level": "Level",
+    "Projet": "Project",
+    "finalMark": "Mark",
+    "by": "by",
+    "recentProjects": "Last 5 validated projects"
 }

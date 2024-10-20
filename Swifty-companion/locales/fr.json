@@ -28,5 +28,9 @@
     "Aucun projet disponible pour ce cursus": "Aucun projet disponible pour ce cursus",
     "Aucune compétence disponible pour ce cursus": "Aucune compétence disponible pour ce cursus",
     "Sélectionner un cursus": "Sélectionner un cursus",
-    "Level": "Niveau"
+    "Level": "Niveau",
+    "Projet": "Projet",
+    "finalMark": "Note",
+    "by": "par",
+    "recentProjects": "Les 5 derniers projets validés"
 }
