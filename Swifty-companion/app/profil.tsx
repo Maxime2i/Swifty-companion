@@ -36,6 +36,7 @@ export default function ProfilScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [projectsLoaded, setProjectsLoaded] = useState(false);
   const { t, i18n } = useTranslation();
+  const [currentPage, setCurrentPage] = useState(0);
 
   useEffect(() => {
     if (userData && accessToken) {
@@ -127,79 +128,68 @@ export default function ProfilScreen() {
         return (
           <View>
             <View style={styles.aboutToggle}>
-              <TouchableOpacity
-                style={[styles.toggleButton, showBasicInfo && styles.activeToggleButton]}
-                onPress={() => setShowBasicInfo(true)}
-              >
-                <ThemedText style={styles.toggleButtonText}>{t('Infos de base')}</ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.toggleButton, !showBasicInfo && styles.activeToggleButton]}
-                onPress={() => setShowBasicInfo(false)}
-              >
-                <ThemedText style={styles.toggleButtonText}>{t('Stats globales')}</ThemedText>
-              </TouchableOpacity>
+             
             </View>
-            {showBasicInfo ? (
-              <View>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+            >
+              <View style={styles.page}>
                 <ThemedText style={styles.tabContentText}>{t('Email')}: {user.email || t('Non disponible')}</ThemedText>
                 <ThemedText style={styles.tabContentText}>{t('Téléphone')}: {user.phone || t('Caché')}</ThemedText>
                 <ThemedText style={styles.tabContentText}>{t('Campus')}: {user.campus?.map((campus: { name: string; }) => campus.name).join(', ') || t('Non spécifié')}</ThemedText>
                 <ThemedText style={styles.tabContentText}>{t('Localisation')}: {user.location || t('Non disponible')}</ThemedText>
               </View>
-            ) : (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsSlider}>
-                <View style={styles.statCard}>
-                  <ThemedText style={styles.statTitle}>{t('Moyenne des projets')}</ThemedText>
-                  <ThemedText style={styles.statValue}>
-                    {(projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null)
+              <View style={styles.page}>
+                <ThemedText style={styles.tabContentText}>{t('Moyenne des projets')}: {(projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null)
                       .reduce((sum, p) => sum + p.final_mark, 0) / 
                       projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null).length
-                    ).toFixed(2)}
-                  </ThemedText>
-                </View>
-                <View style={styles.statCard}>
-                  <ThemedText style={styles.statTitle}>{t('Jours depuis inscription')}</ThemedText>
-                  <ThemedText style={styles.statValue}>
-                    {Math.floor((new Date().getTime() - new Date(user.created_at).getTime()) / (1000 * 3600 * 24))}
-                  </ThemedText>
-                </View>
-                <View style={styles.statCard}>
-                  <ThemedText style={styles.statTitle}>{t('Top 3 coéquipiers')}</ThemedText>
-                  <FlatList
-                    data={coequipier ? Object.entries(coequipier).sort((a, b) => b[1] - a[1]).slice(0, 3) : []}
-                    renderItem={({ item: [login, count], index }) => (
-                      <View style={styles.coequipierItem}>
-                        <ThemedText style={styles.coequipierRank}>{index + 1}</ThemedText>
-                        <ThemedText style={styles.coequipierLogin}>{login}</ThemedText>
-                        <ThemedText style={styles.coequipierCount}> ({count})</ThemedText>
-                      </View>
-                    )}
-                    keyExtractor={(item, index) => index.toString()}
-                    ListEmptyComponent={
-                      <ThemedText style={styles.coequipierText}>{t('Aucun coéquipier trouvé')}</ThemedText>
-                    }
-                  />
-                </View>
-                <View style={styles.statCard}>
-                  <ThemedText style={styles.statTitle}>{t('Top 3 correcteurs')}</ThemedText>
-                  <FlatList
-                    data={correctors ? Object.entries(correctors).sort((a, b) => b[1] - a[1]).slice(0, 3) : []}
-                    renderItem={({ item: [login, count], index }) => (
-                      <View style={styles.coequipierItem}>
-                        <ThemedText style={styles.coequipierRank}>{index + 1}</ThemedText>
-                        <ThemedText style={styles.coequipierLogin}>{login}</ThemedText>
-                        <ThemedText style={styles.coequipierCount}> ({count})</ThemedText>
-                      </View>
-                    )}
-                    keyExtractor={(item, index) => index.toString()}
-                    ListEmptyComponent={
-                      <ThemedText style={styles.coequipierText}>{t('Aucun correcteur trouvé')}</ThemedText>
-                    }
-                  />
-                </View>
-              </ScrollView>
-            )}
+                    ).toFixed(2)}</ThemedText>
+                <ThemedText style={styles.tabContentText}>{t('Jours depuis inscription')}: {Math.floor((new Date().getTime() - new Date(user.created_at).getTime()) / (1000 * 3600 * 24))}</ThemedText>
+                <ThemedText style={styles.tabContentText}></ThemedText>
+                {/* Ajoutez d'autres informations ici */}
+              </View>
+              <View style={styles.page}>
+                <ThemedText style={styles.tabContentText}>{t('Top 5 des coéquipiers')}: </ThemedText>
+                {Object.entries(coequipier)
+                  .sort(([, a], [, b]) => b - a)
+                  .slice(0, 5)
+                  .map(([login, count], index) => (
+                    <View key={login} style={styles.coequipierItem}>
+                      <ThemedText style={styles.coequipierRank}>{index + 1}.</ThemedText>
+                      <ThemedText style={styles.coequipierLogin}>{login}</ThemedText>
+                      <ThemedText style={styles.coequipierCount}> ({count} {t('projets')})</ThemedText>
+                    </View>
+                  ))}
+              </View>
+              <View style={styles.page}>
+                <ThemedText style={styles.tabContentText}>{t('Top 5 des correcteurs')}: </ThemedText>
+                {Object.entries(correctors)
+                  .sort(([, a], [, b]) => b - a)
+                  .slice(0, 5)
+                  .map(([login, count], index) => (
+                    <View key={login} style={styles.coequipierItem}>
+                      <ThemedText style={styles.coequipierRank}>{index + 1}.</ThemedText>
+                      <ThemedText style={styles.coequipierLogin}>{login}</ThemedText>
+                      <ThemedText style={styles.coequipierCount}> ({count} {t('projets')})</ThemedText>
+                    </View>
+                  ))}
+              </View>
+            </ScrollView>
+            <View style={styles.pagination}>
+              {[...Array(4)].map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.paginationDot,
+                    currentPage === index ? styles.paginationDotActive : null
+                  ]}
+                />
+              ))}
+            </View>
           </View>
         );
       case 'projects':
@@ -305,6 +295,12 @@ export default function ProfilScreen() {
       correctorStats[correctorLogin] = (correctorStats[correctorLogin] || 0) + 1;
     });
     return correctorStats;
+  };
+
+  const handleScroll = (event: any) => {
+    const { contentOffset, layoutMeasurement } = event.nativeEvent;
+    const pageIndex = Math.floor(contentOffset.x / layoutMeasurement.width);
+    setCurrentPage(pageIndex);
   };
 
   return (
@@ -598,11 +594,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#191919',
     borderRadius: 10,
     marginTop: 10,
-    padding: 20,
+    padding: 15, // Réduit de 20 à 15
+    maxHeight: '40%', // Ajoute une hauteur maximale
   },
   tabContentText: {
     color: 'white',
     marginBottom: 10,
+    width: '100%', // Utilisez 100% de la largeur du conteneur parent
+    textAlign: 'left',
   },
   projectItem: {
     marginBottom: 10,
@@ -815,5 +814,28 @@ const styles = StyleSheet.create({
   coequipierCount: {
     color: '#FFF',
     fontSize: 14,
+  },
+  page: {
+    width: Dimensions.get('window').width - 70, // Ajusté pour le nouveau padding
+    paddingHorizontal: 10, // Ajoute un padding horizontal
+  },
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'gray',
+    marginHorizontal: 4,
+    marginTop: '15%',
+  },
+  paginationDotActive: {
+    backgroundColor: '#1E90FF', // Assurez-vous que cette couleur est bien visible
+    width: 10, // Légèrement plus grand pour mieux le distinguer
+    height: 10,
   },
 });
