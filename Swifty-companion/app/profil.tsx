@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, View, Dimensions, SafeAreaView, StatusBar, Platform, Image, TouchableOpacity, ScrollView, Animated, FlatList } from 'react-native';
+import { StyleSheet, View, Dimensions, SafeAreaView, StatusBar, Platform, Image, TouchableOpacity, ScrollView, Animated, FlatList, Easing } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/hooks/useTheme';
+import { PieChart } from 'react-native-chart-kit';
 
 
 
@@ -46,6 +47,14 @@ export default function ProfilScreen() {
   const textColor = isDark ? '#ffffff' : '#000000';
   const cardBackground = isDark ? '#191919' : '#f0f0f0';
   const secondaryBackground = isDark ? '#333333' : '#e0e0e0';
+
+  const confettiAnimation = useRef(new Animated.Value(0)).current;
+  const starAnimation = useRef(new Animated.Value(0)).current;
+  const glowAnimation = useRef(new Animated.Value(0)).current;
+  const [isSpecialUser, setIsSpecialUser] = useState(false);
+
+  const imageAnimation = useRef(new Animated.Value(0)).current;
+  const rotateAnimation = useRef(new Animated.Value(0)).current;
 
   const styles = StyleSheet.create({
     container: {
@@ -473,12 +482,40 @@ export default function ProfilScreen() {
 
   
 
+  const startSpecialAnimations = () => {
+    Animated.timing(confettiAnimation, {
+      toValue: 1,
+      duration: 3000, // Plus long pour une chute plus douce
+      useNativeDriver: true,
+    }).start();
+
+    Animated.sequence([
+      Animated.timing(titleAnimation, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.spring(titleAnimation, {
+        toValue: 1.1,
+        friction: 2,
+        tension: 40,
+        useNativeDriver: true,
+      })
+    ]).start();
+  };
+
   useEffect(() => {
     if (userData && accessToken) {
       setIsLoading(true);
       try {
         const parsedUserData = JSON.parse(userData as string);
         setUser(parsedUserData);
+
+        // Vérifier si c'est sheldon
+        if (parsedUserData.login === 'sheldon') {
+          setIsSpecialUser(true);
+          startSpecialAnimations();
+        }
 
         // Sélectionner le cursus avec l'ID le plus élevé par défaut
         if (parsedUserData.cursus_users && parsedUserData.cursus_users.length > 0) {
@@ -579,13 +616,65 @@ export default function ProfilScreen() {
                 <ThemedText style={styles.tabContentText}>{t('Localisation')}: {user.location || t('Non disponible')}</ThemedText>
               </View>
               <View style={styles.page}>
-                <ThemedText style={styles.tabContentText}>{t('Moyenne des projets')}: {(projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null)
+                <ThemedText style={[styles.tabContentText, { fontSize: 14 }]}>{t('Moyenne des projets')}: {(projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null)
                       .reduce((sum, p) => sum + p.final_mark, 0) / 
                       projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null).length
                     ).toFixed(2)}</ThemedText>
-                <ThemedText style={styles.tabContentText}>{t('Jours depuis inscription')}: {Math.floor((new Date().getTime() - new Date(user.created_at).getTime()) / (1000 * 3600 * 24))}</ThemedText>
-                <ThemedText style={styles.tabContentText}></ThemedText>
-                {/* Ajoutez d'autres informations ici */}
+                <ThemedText style={[styles.tabContentText, { fontSize: 14 }]}>{t('Jours depuis inscription')}: {Math.floor((new Date().getTime() - new Date(user.created_at).getTime()) / (1000 * 3600 * 24))}</ThemedText>
+                
+                {projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p["validated?"]).length > 0 && (
+                  <>
+                    <ThemedText style={[styles.tabContentText, { fontSize: 14 }]}>
+                      {t('Projet le plus long')}: {
+                        projects
+                          .filter(p => p.cursus_ids.includes(selectedCursus.id) && p["validated?"])
+                          .map(p => ({
+                            ...p,
+                            realDuration: Math.abs((new Date(p.marked_at).getTime() - new Date(p.created_at).getTime()) / (1000 * 3600))
+                          }))
+                          .reduce((longest, p) => 
+                            p.realDuration > longest.realDuration ? p : longest
+                          ).project.name
+                      } ({
+                        Math.round(projects
+                          .filter(p => p.cursus_ids.includes(selectedCursus.id) && p["validated?"])
+                          .map(p => ({
+                            ...p,
+                            realDuration: Math.abs((new Date(p.marked_at).getTime() - new Date(p.created_at).getTime()) / (1000 * 3600))
+                          }))
+                          .reduce((longest, p) => 
+                            p.realDuration > longest.realDuration ? p : longest
+                          ).realDuration)
+                      } {t('heures')})
+                    </ThemedText>
+                    
+                    <ThemedText style={[styles.tabContentText, { fontSize: 12 }]}>
+                      {t('Projet le plus court')}: {
+                        projects
+                          .filter(p => p.cursus_ids.includes(selectedCursus.id) && p["validated?"])
+                          .map(p => ({
+                            ...p,
+                            realDuration: Math.abs((new Date(p.marked_at).getTime() - new Date(p.created_at).getTime()) / (1000 * 3600))
+                          }))
+                          .filter(p => p.realDuration > 0)
+                          .reduce((shortest, p) => 
+                            p.realDuration < shortest.realDuration ? p : shortest
+                          ).project.name
+                      } ({
+                        Math.round(projects
+                          .filter(p => p.cursus_ids.includes(selectedCursus.id) && p["validated?"])
+                          .map(p => ({
+                            ...p,
+                            realDuration: Math.abs((new Date(p.marked_at).getTime() - new Date(p.created_at).getTime()) / (1000 * 3600))
+                          }))
+                          .filter(p => p.realDuration > 0)
+                          .reduce((shortest, p) => 
+                            p.realDuration < shortest.realDuration ? p : shortest
+                          ).realDuration)
+                      } {t('heures')})
+                    </ThemedText>
+                  </>
+                )}
               </View>
               <View style={styles.page}>
                 <ThemedText style={styles.tabContentText}>{t('Top 5 des coéquipiers')}: </ThemedText>
@@ -622,9 +711,31 @@ export default function ProfilScreen() {
                   <ThemedText style={styles.coequipierText}>{t('Aucun correcteur trouvé')}</ThemedText>
                 )}
               </View>
+              <View style={styles.page}>
+                <ThemedText style={styles.tabContentText}>{t('Répartition des notes')}: </ThemedText>
+                {projects.length > 0 ? (
+                  <PieChart
+                    data={calculateProjectStats(projects, selectedCursus.id)}
+                    width={Dimensions.get('window').width - 90}
+                    height={150}
+                    chartConfig={{
+                      backgroundColor: backgroundColor,
+                      backgroundGradientFrom: backgroundColor,
+                      backgroundGradientTo: backgroundColor,
+                      color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                    }}
+                    accessor="population"
+                    backgroundColor="transparent"
+                    paddingLeft="15"
+                    absolute
+                  />
+                ) : (
+                  <ThemedText style={styles.coequipierText}>{t('Aucun projet trouvé')}</ThemedText>
+                )}
+              </View>
             </ScrollView>
             <View style={styles.pagination}>
-              {[...Array(4)].map((_, index) => (
+              {[...Array(5)].map((_, index) => (
                 <View
                   key={index}
                   style={[
@@ -763,6 +874,88 @@ export default function ProfilScreen() {
     setCurrentPage(pageIndex);
   };
 
+  const specialStyles = StyleSheet.create({
+    specialContainer: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 1000,
+    },
+    confetti: {
+      position: 'absolute',
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    specialTitle: {
+      position: 'absolute',
+      width: '100%',
+      textAlign: 'center',
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: '#FFD700',
+      textShadowColor: 'rgba(0, 0, 0, 0.75)',
+      textShadowOffset: { width: 2, height: 2 },
+      textShadowRadius: 5,
+      top: '20%',
+      zIndex: 1001,
+    },
+  });
+
+  const titleAnimation = useRef(new Animated.Value(0)).current;
+
+  const animateProfileImage = () => {
+    // Reset des animations
+    imageAnimation.setValue(0);
+    rotateAnimation.setValue(0);
+
+    Animated.parallel([
+      // Un seul saut fluide
+      Animated.timing(imageAnimation, {
+        toValue: 1,
+        duration: 1200, // Durée totale du saut
+        easing: Easing.bezier(0.4, 0, 0.2, 1), // Courbe d'animation fluide
+        useNativeDriver: true,
+      }),
+      // Rotation
+      Animated.timing(rotateAnimation, {
+        toValue: 1,
+        duration: 1200, // Même durée que le saut
+        easing: Easing.bezier(0.4, 0, 0.2, 1),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const calculateProjectStats = (projects: any[], selectedCursusId: number) => {
+    const filteredProjects = projects.filter(p => 
+      p.cursus_ids.includes(selectedCursusId) && 
+      p.final_mark !== null
+    );
+
+    const above100 = filteredProjects.filter(p => p.final_mark > 100).length;
+    const below100 = filteredProjects.filter(p => p.final_mark <= 100).length;
+
+    return [
+      {
+        name: t('> 100'),
+        population: above100,
+        color: '#1E90FF',
+        legendFontColor: textColor,
+        legendFontSize: 15
+      },
+      {
+        name: t('≤ 100'),
+        population: below100,
+        color: '#FF5252',
+        legendFontColor: textColor,
+        legendFontSize: 15
+      }
+    ];
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1E90FF" />
@@ -779,10 +972,30 @@ export default function ProfilScreen() {
           <>
             <View style={styles.userInfoContainer}>
               <View style={styles.userInfo}>
-                <Image 
-                  source={{ uri: user.image?.link }} 
-                  style={styles.profileImage} 
-                />
+                <TouchableOpacity onPress={animateProfileImage}>
+                  <Animated.Image 
+                    source={{ uri: user.image?.link }} 
+                    style={[
+                      styles.profileImage,
+                      {
+                        transform: [
+                          {
+                            translateY: imageAnimation.interpolate({
+                              inputRange: [0, 0.5, 1],
+                              outputRange: [0, -50, 0], // Un seul saut qui monte puis redescend
+                            }),
+                          },
+                          {
+                            rotateY: rotateAnimation.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: ['0deg', '720deg'], // Double rotation maintenue
+                            }),
+                          },
+                        ],
+                      },
+                    ]} 
+                  />
+                </TouchableOpacity>
                 <View style={styles.userDetails}>
                   <ThemedText style={styles.fullName}>{user.usual_full_name}</ThemedText>
                   <ThemedText style={styles.text}>@{user.login}  ({user.kind})</ThemedText>
@@ -877,6 +1090,94 @@ export default function ProfilScreen() {
           {renderTabContent()}
         </View>
       </View>
+      
+      {isSpecialUser && (
+        <>
+          <Animated.View
+            style={[
+              specialStyles.specialContainer,
+              {
+                opacity: confettiAnimation,
+              },
+            ]}
+          >
+            {[...Array(100)].map((_, i) => {
+              const randomLeft = Math.random() * width; // Utilise la largeur totale de l'écran
+              const randomDelay = Math.random() * 2; // Délai aléatoire pour la chute
+              const randomSize = Math.random() * 6 + 4; // Taille aléatoire entre 4 et 10
+
+              return (
+                <Animated.View
+                  key={i}
+                  style={[
+                    specialStyles.confetti,
+                    {
+                      left: randomLeft,
+                      top: -(Math.random() * height * 0.5), // Position initiale aléatoire au-dessus de l'écran
+                      width: randomSize,
+                      height: randomSize,
+                      backgroundColor: ['#FFD700', '#FF69B4', '#87CEEB', '#98FB98', '#DDA0DD'][Math.floor(Math.random() * 5)],
+                      transform: [
+                        {
+                          translateY: confettiAnimation.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, height + randomSize],
+                            extrapolate: 'clamp',
+                          }),
+                        },
+                        {
+                          rotate: `${Math.random() * 360}deg`,
+                        },
+                        {
+                          scale: Math.random() * 0.5 + 0.5,
+                        },
+                      ],
+                    },
+                  ]}
+                />
+              );
+            })}
+          </Animated.View>
+
+          <Animated.Text
+            style={[
+              specialStyles.specialTitle,
+              {
+                opacity: titleAnimation,
+                transform: [
+                  {
+                    scale: titleAnimation.interpolate({
+                      inputRange: [0, 1, 1.1],
+                      outputRange: [0, 1, 1.1],
+                    }),
+                  },
+                  {
+                    translateY: titleAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [50, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            Sheldon the Dog 🐕
+          </Animated.Text>
+
+          <Animated.View
+            style={[
+              styles.userInfoContainer,
+              {
+                shadowColor: '#FFD700',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: glowAnimation,
+                shadowRadius: 20,
+                elevation: 10,
+              },
+            ]}
+          />
+        </>
+      )}
     </SafeAreaView>
   );
 }
