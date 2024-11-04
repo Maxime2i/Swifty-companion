@@ -217,6 +217,8 @@ export default function ProfilScreen() {
       backgroundColor: 'rgba(30, 144, 255, 0.2)',
       borderRadius: 20,
     },
+    activeTabButton: {
+    },
     tabContent: {
       flex: 1,
       backgroundColor: cardBackground,
@@ -645,7 +647,16 @@ export default function ProfilScreen() {
                 >
                   <ThemedText style={styles.projectName}>{project.project.name}</ThemedText>
                   <View style={styles.projectRight}>
-                    <ThemedText style={styles.projectMark}>{project.final_mark || 'En cours'}</ThemedText>
+                    <ThemedText 
+                      style={[
+                        styles.projectMark,
+                        project.final_mark && {
+                          color: project["validated?"] ? '#1E90FF' : '#FF5252'
+                        }
+                      ]}
+                    >
+                      {project.final_mark || 'En cours'}
+                    </ThemedText>
                     <Ionicons 
                       name={expandedProjects[project.id] ? "chevron-up" : "chevron-down"} 
                       size={24} 
@@ -668,7 +679,14 @@ export default function ProfilScreen() {
                                   </ThemedText>
                                 </ThemedText>
                               </View>
-                              <ThemedText style={styles.teamMark}>
+                              <ThemedText 
+                                style={[
+                                  styles.teamMark,
+                                  team.final_mark !== undefined && team.final_mark !== null && {
+                                    color: project["validated?"] ? '#1E90FF' : '#FF5252'
+                                  }
+                                ]}
+                              >
                                 {team.final_mark !== undefined && team.final_mark !== null
                                   ? team.final_mark
                                   : "En cours"}
