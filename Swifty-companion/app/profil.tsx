@@ -144,39 +144,50 @@ export default function ProfilScreen() {
                 <ThemedText style={styles.tabContentText}>{t('Localisation')}: {user.location || t('Non disponible')}</ThemedText>
               </View>
               <View style={styles.page}>
-                <ThemedText style={styles.tabContentText}>{t('Moyenne des projets')}: {(projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null)
-                      .reduce((sum, p) => sum + p.final_mark, 0) / 
-                      projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null).length
-                    ).toFixed(2)}</ThemedText>
+                <ThemedText style={styles.tabContentText}>{t('Moyenne des projets')}: {projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null).length > 0 ? 
+                  (projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null)
+                    .reduce((sum, p) => sum + p.final_mark, 0) / 
+                    projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null).length
+                  ).toFixed(2) 
+                  : 'N/A'}</ThemedText>
                 <ThemedText style={styles.tabContentText}>{t('Jours depuis inscription')}: {Math.floor((new Date().getTime() - new Date(user.created_at).getTime()) / (1000 * 3600 * 24))}</ThemedText>
                 <ThemedText style={styles.tabContentText}></ThemedText>
                 {/* Ajoutez d'autres informations ici */}
               </View>
               <View style={styles.page}>
                 <ThemedText style={styles.tabContentText}>{t('Top 5 des coéquipiers')}: </ThemedText>
-                {Object.entries(coequipier)
-                  .sort(([, a], [, b]) => b - a)
-                  .slice(0, 5)
-                  .map(([login, count], index) => (
-                    <View key={login} style={styles.coequipierItem}>
-                      <ThemedText style={styles.coequipierRank}>{index + 1}.</ThemedText>
-                      <ThemedText style={styles.coequipierLogin}>{login}</ThemedText>
-                      <ThemedText style={styles.coequipierCount}> ({count} {t('projets')})</ThemedText>
-                    </View>
-                  ))}
+                
+                {Object.entries(coequipier).length > 0 ? (
+                  Object.entries(coequipier)
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, 5)
+                    .map(([login, count], index) => (
+                      <View key={login} style={styles.coequipierItem}>
+                        <ThemedText style={styles.coequipierRank}>{index + 1}.</ThemedText>
+                        <ThemedText style={styles.coequipierLogin}>{login}</ThemedText>
+                        <ThemedText style={styles.coequipierCount}> ({count} {t('projets')})</ThemedText>
+                      </View>
+                    ))
+                ) : (
+                  <ThemedText style={styles.coequipierText}>{t('Aucun coéquipier trouvé')}</ThemedText>
+                )}
               </View>
               <View style={styles.page}>
                 <ThemedText style={styles.tabContentText}>{t('Top 5 des correcteurs')}: </ThemedText>
-                {Object.entries(correctors)
-                  .sort(([, a], [, b]) => b - a)
-                  .slice(0, 5)
-                  .map(([login, count], index) => (
-                    <View key={login} style={styles.coequipierItem}>
-                      <ThemedText style={styles.coequipierRank}>{index + 1}.</ThemedText>
-                      <ThemedText style={styles.coequipierLogin}>{login}</ThemedText>
-                      <ThemedText style={styles.coequipierCount}> ({count} {t('projets')})</ThemedText>
-                    </View>
-                  ))}
+                {Object.entries(correctors).length > 0 ? (
+                  Object.entries(correctors)
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, 5)
+                    .map(([login, count], index) => (
+                      <View key={login} style={styles.coequipierItem}>
+                        <ThemedText style={styles.coequipierRank}>{index + 1}.</ThemedText>
+                        <ThemedText style={styles.coequipierLogin}>{login}</ThemedText>
+                        <ThemedText style={styles.coequipierCount}> ({count} {t('projets')})</ThemedText>
+                      </View>
+                    ))
+                ) : (
+                  <ThemedText style={styles.coequipierText}>{t('Aucun correcteur trouvé')}</ThemedText>
+                )}
               </View>
             </ScrollView>
             <View style={styles.pagination}>
@@ -425,6 +436,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#1E90FF',
+    paddingBottom: Platform.OS === 'ios' ? 34 : 0,
   },
   blueBackground: {
     position: 'absolute',
@@ -472,7 +484,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#191919',
     borderRadius: 10,
     padding: 20,
-    marginTop: 100,
+    marginTop: 40,
   },
   userInfo: {
     flexDirection: 'row',
@@ -535,7 +547,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#191919',
     borderRadius: 10,
     padding: 10,
-    marginTop: 20,
+    marginTop: 10,
   },
   statItem: {
     alignItems: 'center',
@@ -559,8 +571,8 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginTop: 20,
-    marginBottom: 10,
+    marginTop: 10,
+    marginBottom: 5,
     position: 'relative',
     height: 40,
   },
@@ -579,6 +591,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     backgroundColor: '#191919',
     borderRadius: 20,
+    fontSize: 12,
   },
   activeTabButtonText: {
     color: '#1E90FF',
@@ -593,9 +606,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#191919',
     borderRadius: 10,
-    marginTop: 10,
-    padding: 15, // Réduit de 20 à 15
-    maxHeight: '40%', // Ajoute une hauteur maximale
+    marginTop: 5,
+    padding: 15,
+    maxHeight: '45%',
   },
   tabContentText: {
     color: 'white',
@@ -831,7 +844,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: 'gray',
     marginHorizontal: 4,
-    marginTop: '15%',
+    marginTop: '5%',
   },
   paginationDotActive: {
     backgroundColor: '#1E90FF', // Assurez-vous que cette couleur est bien visible

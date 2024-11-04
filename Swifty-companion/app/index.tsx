@@ -52,11 +52,12 @@ export default function HomeScreen() {
     () => debounce(async (text: string) => {
       await checkAndRefreshToken();
       if (accessToken && text.length > 0) {
+        const searchText = text.toLowerCase();
         try {
           const response = await axios.get(`https://api.intra.42.fr/v2/users`, {
             headers: { Authorization: `Bearer ${accessToken}` },
             params: { 
-              'range[login]': `${text},${text}z`,
+              'range[login]': `${searchText},${searchText}z`,
               sort: 'login',
               'page[size]': 10
             }
