@@ -7,6 +7,9 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useColorScheme as useNativeColorScheme } from 'react-native';
+import { useTheme } from '@/hooks/useTheme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const debounce = (func: (...args: any[]) => void, delay: number) => {
   let timeoutId: NodeJS.Timeout;
@@ -23,6 +26,100 @@ export default function HomeScreen() {
   const [tokenExpiration, setTokenExpiration] = useState<number | null>(null);
   const router = useRouter();
   const { t, i18n } = useTranslation();
+  const { theme, setTheme } = useTheme();
+
+  const isDark = theme === 'dark';
+  const backgroundColor = isDark ? '#121212' : '#ffffff';
+  const textColor = isDark ? '#ffffff' : '#000000';
+  const cardBackground = isDark ? '#191919' : '#f0f0f0';
+  const secondaryBackground = isDark ? '#333333' : '#e0e0e0';
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: backgroundColor,
+    },
+    languageToggle: {
+      position: 'absolute',
+      top: 40,
+      right: 20,
+      padding: 5,
+      backgroundColor: cardBackground,
+      borderRadius: 5,
+    },
+    languageToggleText: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      color: textColor,
+    },
+    topSection: {
+      paddingTop: 120,
+      alignItems: 'center',
+    },
+    searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '80%',
+      backgroundColor: cardBackground,
+      borderRadius: 5,
+      marginTop: 100,
+    },
+    input: {
+      flex: 1,
+      height: 40,
+      paddingHorizontal: 10,
+      color: textColor,
+    },
+    searchButton: {
+      padding: 10,
+    },
+    suggestionsList: {
+      maxHeight: 200,
+      width: '80%',
+      paddingTop: 10,
+    },
+    suggestionItem: {
+      padding: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: secondaryBackground,
+    },
+    suggestionContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    suggestionImage: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      marginRight: 10,
+    },
+    suggestionText: {
+      fontSize: 16,
+      color: textColor,
+    },
+    headerButtons: {
+      position: 'absolute',
+      top: 40,
+      right: 20,
+      flexDirection: 'row',
+      gap: 10,
+    },
+    headerButton: {
+      padding: 8,
+      backgroundColor: cardBackground,
+      borderRadius: 5,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerButtonText: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      color: textColor,
+    },
+  });
+  
+
+
 
   const getNewAccessToken = async () => {
     try {
@@ -144,15 +241,62 @@ export default function HomeScreen() {
     </TouchableOpacity>
   );
 
-  const toggleLanguage = () => {
-    i18n.changeLanguage(i18n.language === 'en' ? 'fr' : 'en');
+  // Charger les préférences sauvegardées au démarrage
+  useEffect(() => {
+    const loadSavedPreferences = async () => {
+      try {
+        const savedLanguage = await AsyncStorage.getItem('userLanguage');
+        const savedTheme = await AsyncStorage.getItem('userTheme');
+        
+        if (savedLanguage) {
+          i18n.changeLanguage(savedLanguage);
+        }
+        if (savedTheme) {
+          setTheme(savedTheme as 'light' | 'dark');
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des préférences:', error);
+      }
+    };
+
+    loadSavedPreferences();
+  }, []);
+
+  // Modifier les fonctions de basculement pour sauvegarder les préférences
+  const toggleLanguage = async () => {
+    const newLanguage = i18n.language === 'en' ? 'fr' : 'en';
+    try {
+      await AsyncStorage.setItem('userLanguage', newLanguage);
+      i18n.changeLanguage(newLanguage);
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde de la langue:', error);
+    }
+  };
+
+  const toggleTheme = async () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    try {
+      await AsyncStorage.setItem('userTheme', newTheme);
+      setTheme(newTheme);
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du thème:', error);
+    }
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <TouchableOpacity onPress={toggleLanguage} style={styles.languageToggle}>
-        <ThemedText style={styles.languageToggleText}>{i18n.language.toUpperCase()}</ThemedText>
-      </TouchableOpacity>
+    <ThemedView style={[styles.container, { backgroundColor: theme === 'light' ? '#ffffff' : '#121212' }]}>
+      <View style={styles.headerButtons}>
+        <TouchableOpacity onPress={toggleLanguage} style={styles.headerButton}>
+          <ThemedText style={styles.headerButtonText}>{i18n.language.toUpperCase()}</ThemedText>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={toggleTheme} style={styles.headerButton}>
+          <Ionicons 
+            name={theme === 'light' ? 'moon' : 'sunny'} 
+            size={20} 
+            color={theme === 'light' ? '#000000' : '#ffffff'} 
+          />
+        </TouchableOpacity>
+      </View>
       <View style={styles.topSection}>
         <View style={styles.searchContainer}>
           <TextInput
@@ -179,67 +323,3 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
-  },
-  languageToggle: {
-    position: 'absolute',
-    top: 40,
-    right: 20,
-    padding: 5,
-    backgroundColor: '#191919',
-    borderRadius: 5,
-  },
-  languageToggleText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  topSection: {
-    paddingTop: 120,
-    alignItems: 'center',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '80%',
-    backgroundColor: '#191919',
-    borderRadius: 5,
-    marginTop: 100,
-  },
-  input: {
-    flex: 1,
-    height: 40,
-    paddingHorizontal: 10,
-    color: 'white',
-  },
-  searchButton: {
-    padding: 10,
-  },
-  suggestionsList: {
-    maxHeight: 200,
-    width: '80%',
-    paddingTop: 10,
-  },
-  suggestionItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-  },
-  suggestionContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  suggestionImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 10,
-  },
-  suggestionText: {
-    fontSize: 16,
-    color: 'white',
-  },
-});

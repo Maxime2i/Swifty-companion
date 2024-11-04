@@ -8,6 +8,9 @@ import { TouchableOpacity as TouchableOpacityGestureHandler } from 'react-native
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '@/hooks/useTheme';
+
+
 
 const { height, width } = Dimensions.get('window');
 
@@ -37,6 +40,436 @@ export default function ProfilScreen() {
   const [projectsLoaded, setProjectsLoaded] = useState(false);
   const { t, i18n } = useTranslation();
   const [currentPage, setCurrentPage] = useState(0);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  const backgroundColor = isDark ? '#000000' : '#ffffff';
+  const textColor = isDark ? '#ffffff' : '#000000';
+  const cardBackground = isDark ? '#191919' : '#f0f0f0';
+  const secondaryBackground = isDark ? '#333333' : '#e0e0e0';
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#1E90FF',
+      paddingBottom: Platform.OS === 'ios' ? 34 : 0,
+    },
+    blueBackground: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: height / 3.6,
+      backgroundColor: '#1E90FF',
+    },
+    blackBackground: {
+      position: 'absolute',
+      top: height / 3.6,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: backgroundColor,
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 20,
+    },
+    headerContainer: {
+      width: '100%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+      marginBottom: 20,
+      height: 60, // Ajout d'une hauteur fixe
+    },
+    backButton: {
+      position: 'absolute',
+      left: 10,
+      top: Platform.OS === 'android' ? StatusBar.currentHeight : 10,
+      zIndex: 1, // Assure que le bouton est au-dessus des autres éléments
+    },
+    headerTitle: {
+      fontSize: 22,
+      fontWeight: 'bold',
+      color: textColor,
+      textAlign: 'center',
+      flex: 1,
+    },
+    userInfoContainer: {
+      backgroundColor: cardBackground,
+      borderRadius: 10,
+      padding: 20,
+      marginTop: 40,
+    },
+    userInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    profileImage: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      marginRight: 20,
+    },
+    userDetails: {
+      flex: 1,
+    },
+    fullName: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: textColor,
+      marginBottom: 5,
+    },
+    text: {
+      fontSize: 16,
+      color: textColor,
+      marginBottom: 5,
+    },
+    levelContainer: {
+      marginTop: 10,
+    },
+    levelBar: {
+      height: 30,
+      backgroundColor: secondaryBackground,
+      borderRadius: 15,
+      overflow: 'hidden',
+      position: 'relative',
+    },
+    levelProgress: {
+      height: '100%',
+      backgroundColor: '#1E90FF',
+      borderRadius: 15,
+      position: 'absolute',
+      left: 0,
+      top: 0,
+    },
+    levelText: {
+      position: 'absolute',
+      left: 10,
+      top: 0,
+      bottom: 0,
+      right: 10,
+      textAlign: 'center',
+      textAlignVertical: 'center',
+      color: textColor,
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+    statsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      backgroundColor: cardBackground,
+      borderRadius: 10,
+      padding: 10,
+      marginTop: 10,
+    },
+    statItem: {
+      alignItems: 'center',
+      flex: 1,
+      paddingHorizontal: 5,
+    },
+    statNumber: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: textColor,
+      lineHeight: 40,
+      includeFontPadding: false,
+      textAlignVertical: 'center',
+    },
+    statLabel: {
+      fontSize: 14,
+      color: textColor,
+      marginTop: 5,
+      textAlign: 'center',
+    },
+    tabContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      marginTop: 10,
+      marginBottom: 5,
+      position: 'relative',
+      height: 40,
+    },
+    tabButton: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1,
+    },
+    tabButtonText: {
+      color: textColor,
+      fontWeight: 'bold',
+      width: '90%',
+      height: '100%',
+      textAlignVertical: 'center',
+      textAlign: 'center',
+      backgroundColor: cardBackground,
+      borderRadius: 20,
+      fontSize: 12,
+    },
+    activeTabButtonText: {
+      color: '#1E90FF',
+      width: '90%',
+      height: '100%',
+      textAlignVertical: 'center',
+      textAlign: 'center',
+      backgroundColor: 'rgba(30, 144, 255, 0.2)',
+      borderRadius: 20,
+    },
+    tabContent: {
+      flex: 1,
+      backgroundColor: cardBackground,
+      borderRadius: 10,
+      marginTop: 5,
+      padding: 15,
+      maxHeight: '45%',
+    },
+    tabContentText: {
+      color: textColor,
+      marginBottom: 10,
+      width: '100%', // Utilisez 100% de la largeur du conteneur parent
+      textAlign: 'left',
+    },
+    projectItem: {
+      marginBottom: 10,
+      backgroundColor: secondaryBackground,
+      borderRadius: 8,
+      overflow: 'hidden',
+    },
+    projectHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 10,
+    },
+    projectName: {
+      color: textColor,
+      fontSize: 16,
+      flex: 1,
+    },
+    projectRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    projectMark: {
+      color: textColor,
+      marginRight: 10,
+    },
+    projectDetails: {
+      padding: 10,
+      backgroundColor: secondaryBackground,
+    },
+    projectDetailText: {
+      color: textColor,
+      marginBottom: 5,
+    },
+    projectsScrollView: {
+      flex: 1,
+    },
+    skillsScrollView: {
+      flex: 1,
+    },
+    skillItem: {
+      marginBottom: 15,
+    },
+    skillInfo: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 5,
+    },
+    skillName: {
+      color: textColor,
+      fontSize: 16,
+    },
+    skillLevel: {
+      color: '#1E90FF',
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+    skillBarContainer: {
+      height: 10,
+      backgroundColor: secondaryBackground,
+      borderRadius: 5,
+      overflow: 'hidden',
+    },
+    skillBar: {
+      height: '100%',
+      backgroundColor: '#1E90FF',
+      borderRadius: 5,
+    },
+    cursusSelector: {
+      marginTop: 10,
+      zIndex: 1,
+    },
+    cursusButton: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: secondaryBackground,
+      padding: 5,
+      paddingLeft: 10,
+      borderRadius: 5,
+    },
+    cursusButtonText: {
+      color: textColor,
+      fontSize: 14,
+    },
+    cursusList: {
+      position: 'absolute',
+      top: '100%',
+      left: 0,
+      right: 0,
+      backgroundColor: secondaryBackground,
+      borderRadius: 5,
+      marginTop: 5,
+      maxHeight: 150,
+      overflow: 'scroll',
+    },
+    cursusItem: {
+      padding: 5,
+      paddingLeft: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: secondaryBackground,
+    },
+    cursusItemText: {
+      color: textColor,
+      fontSize: 14,
+    },
+    projectDetailHeader: {
+      color: textColor,
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginTop: 10,
+      marginBottom: 5,
+    },
+    teamItem: {
+      marginLeft: 10,
+      marginBottom: 10,
+    },
+    teamHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    teamName: {
+      color: textColor,
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+    teamMark: {
+      color: textColor,
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+    teamStatus: {
+      color: textColor,
+      fontSize: 12,
+    },
+    teamMembers: {
+      color: textColor,
+      fontSize: 12,
+      fontStyle: 'italic',
+    },
+    teamNameContainer: {
+      flex: 1,
+      marginRight: 10,
+    },
+    teamDate: {
+      color: textColor,
+      fontSize: 12,
+      fontWeight: 'normal',
+    },
+    statsSlider: {
+      marginTop: 10,
+    },
+    statCard: {
+      backgroundColor: secondaryBackground,
+      borderRadius: 10,
+      padding: 15,
+      marginRight: 10,
+      width: 150,
+      height: 150,
+    },
+    statTitle: {
+      color: textColor,
+      fontSize: 14,
+      marginBottom: 5,
+    },
+    statValue: {
+      color: textColor,
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+    aboutToggle: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 15,
+    },
+    toggleButton: {
+      flex: 1,
+      padding: 10,
+      alignItems: 'center',
+      backgroundColor: secondaryBackground,
+      borderRadius: 15,
+      marginHorizontal: 10,
+    },
+    activeToggleButton: {
+      backgroundColor: '#3A96FF',
+    },
+    toggleButtonText: {
+      color: textColor,
+      fontWeight: 'bold',
+    },
+    coequipierText: {
+      color: textColor,
+      fontSize: 14,
+    },
+    coequipierItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: -2,
+    },
+    coequipierRank: {
+      color: textColor,
+      fontSize: 14,
+      marginRight: 5,
+    },
+    coequipierLogin: {
+      color: textColor,
+      fontSize: 14,
+    },
+    coequipierCount: {
+      color: textColor,
+      fontSize: 14,
+    },
+    page: {
+      width: Dimensions.get('window').width - 70, // Ajusté pour le nouveau padding
+      paddingHorizontal: 10, // Ajoute un padding horizontal
+    },
+    pagination: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 10,
+    },
+    paginationDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: 'gray',
+      marginHorizontal: 4,
+      marginTop: '5%',
+    },
+    paginationDotActive: {
+      backgroundColor: '#1E90FF', // Assurez-vous que cette couleur est bien visible
+      width: 10, // Légèrement plus grand pour mieux le distinguer
+      height: 10,
+    },
+  });
+  
+
+  
 
   useEffect(() => {
     if (userData && accessToken) {
@@ -144,12 +577,10 @@ export default function ProfilScreen() {
                 <ThemedText style={styles.tabContentText}>{t('Localisation')}: {user.location || t('Non disponible')}</ThemedText>
               </View>
               <View style={styles.page}>
-                <ThemedText style={styles.tabContentText}>{t('Moyenne des projets')}: {projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null).length > 0 ? 
-                  (projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null)
-                    .reduce((sum, p) => sum + p.final_mark, 0) / 
-                    projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null).length
-                  ).toFixed(2) 
-                  : 'N/A'}</ThemedText>
+                <ThemedText style={styles.tabContentText}>{t('Moyenne des projets')}: {(projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null)
+                      .reduce((sum, p) => sum + p.final_mark, 0) / 
+                      projects.filter(p => p.cursus_ids.includes(selectedCursus.id) && p.final_mark !== null).length
+                    ).toFixed(2)}</ThemedText>
                 <ThemedText style={styles.tabContentText}>{t('Jours depuis inscription')}: {Math.floor((new Date().getTime() - new Date(user.created_at).getTime()) / (1000 * 3600 * 24))}</ThemedText>
                 <ThemedText style={styles.tabContentText}></ThemedText>
                 {/* Ajoutez d'autres informations ici */}
@@ -218,7 +649,7 @@ export default function ProfilScreen() {
                     <Ionicons 
                       name={expandedProjects[project.id] ? "chevron-up" : "chevron-down"} 
                       size={24} 
-                      color="white" 
+                      color={textColor} 
                     />
                   </View>
                 </TouchableOpacity>
@@ -310,7 +741,7 @@ export default function ProfilScreen() {
 
   const handleScroll = (event: any) => {
     const { contentOffset, layoutMeasurement } = event.nativeEvent;
-    const pageIndex = Math.floor(contentOffset.x / layoutMeasurement.width);
+    const pageIndex = Math.round(contentOffset.x / layoutMeasurement.width);
     setCurrentPage(pageIndex);
   };
 
@@ -322,7 +753,7 @@ export default function ProfilScreen() {
       <View style={styles.content}>
         <View style={styles.headerContainer}>
           <TouchableOpacityGestureHandler onPress={handleGoBack} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="white" />
+            <Ionicons name="arrow-back" size={24} color={textColor} />
           </TouchableOpacityGestureHandler>
           <ThemedText style={styles.headerTitle}>{t('Profil 42')}</ThemedText>
         </View>
@@ -342,7 +773,7 @@ export default function ProfilScreen() {
                       <ThemedText style={styles.cursusButtonText}>
                         {selectedCursus.name || 'Sélectionner un cursus'}
                       </ThemedText>
-                      <Ionicons name={isCursusOpen ? "chevron-up" : "chevron-down"} size={20} color="white" />
+                      <Ionicons name={isCursusOpen ? "chevron-up" : "chevron-down"} size={20} color={textColor} />
                     </TouchableOpacity>
                     {isCursusOpen && (
                       <View style={styles.cursusList}>
@@ -432,423 +863,3 @@ export default function ProfilScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1E90FF',
-    paddingBottom: Platform.OS === 'ios' ? 34 : 0,
-  },
-  blueBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: height / 3.6,
-    backgroundColor: '#1E90FF',
-  },
-  blackBackground: {
-    position: 'absolute',
-    top: height / 3.6,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#000000',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  headerContainer: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-    marginBottom: 20,
-    height: 60, // Ajout d'une hauteur fixe
-  },
-  backButton: {
-    position: 'absolute',
-    left: 10,
-    top: Platform.OS === 'android' ? StatusBar.currentHeight : 10,
-    zIndex: 1, // Assure que le bouton est au-dessus des autres éléments
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: 'white',
-    textAlign: 'center',
-    flex: 1,
-  },
-  userInfoContainer: {
-    backgroundColor: '#191919',
-    borderRadius: 10,
-    padding: 20,
-    marginTop: 40,
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginRight: 20,
-  },
-  userDetails: {
-    flex: 1,
-  },
-  fullName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 5,
-  },
-  text: {
-    fontSize: 16,
-    color: 'white',
-    marginBottom: 5,
-  },
-  levelContainer: {
-    marginTop: 10,
-  },
-  levelBar: {
-    height: 30,
-    backgroundColor: '#333',
-    borderRadius: 15,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  levelProgress: {
-    height: '100%',
-    backgroundColor: '#1E90FF',
-    borderRadius: 15,
-    position: 'absolute',
-    left: 0,
-    top: 0,
-  },
-  levelText: {
-    position: 'absolute',
-    left: 10,
-    top: 0,
-    bottom: 0,
-    right: 10,
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: '#191919',
-    borderRadius: 10,
-    padding: 10,
-    marginTop: 10,
-  },
-  statItem: {
-    alignItems: 'center',
-    flex: 1,
-    paddingHorizontal: 5,
-  },
-  statNumber: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: 'white',
-    lineHeight: 40,
-    includeFontPadding: false,
-    textAlignVertical: 'center',
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#888',
-    marginTop: 5,
-    textAlign: 'center',
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 10,
-    marginBottom: 5,
-    position: 'relative',
-    height: 40,
-  },
-  tabButton: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  tabButtonText: {
-    color: '#888',
-    fontWeight: 'bold',
-    width: '90%',
-    height: '100%',
-    textAlignVertical: 'center',
-    textAlign: 'center',
-    backgroundColor: '#191919',
-    borderRadius: 20,
-    fontSize: 12,
-  },
-  activeTabButtonText: {
-    color: '#1E90FF',
-    width: '90%',
-    height: '100%',
-    textAlignVertical: 'center',
-    textAlign: 'center',
-    backgroundColor: 'rgba(30, 144, 255, 0.2)',
-    borderRadius: 20,
-  },
-  tabContent: {
-    flex: 1,
-    backgroundColor: '#191919',
-    borderRadius: 10,
-    marginTop: 5,
-    padding: 15,
-    maxHeight: '45%',
-  },
-  tabContentText: {
-    color: 'white',
-    marginBottom: 10,
-    width: '100%', // Utilisez 100% de la largeur du conteneur parent
-    textAlign: 'left',
-  },
-  projectItem: {
-    marginBottom: 10,
-    backgroundColor: '#222',
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  projectHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 10,
-  },
-  projectName: {
-    color: 'white',
-    fontSize: 16,
-    flex: 1,
-  },
-  projectRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  projectMark: {
-    color: 'white',
-    marginRight: 10,
-  },
-  projectDetails: {
-    padding: 10,
-    backgroundColor: '#333',
-  },
-  projectDetailText: {
-    color: 'white',
-    marginBottom: 5,
-  },
-  projectsScrollView: {
-    flex: 1,
-  },
-  skillsScrollView: {
-    flex: 1,
-  },
-  skillItem: {
-    marginBottom: 15,
-  },
-  skillInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 5,
-  },
-  skillName: {
-    color: 'white',
-    fontSize: 16,
-  },
-  skillLevel: {
-    color: '#1E90FF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  skillBarContainer: {
-    height: 10,
-    backgroundColor: '#333',
-    borderRadius: 5,
-    overflow: 'hidden',
-  },
-  skillBar: {
-    height: '100%',
-    backgroundColor: '#1E90FF',
-    borderRadius: 5,
-  },
-  cursusSelector: {
-    marginTop: 10,
-    zIndex: 1,
-  },
-  cursusButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#333',
-    padding: 5,
-    paddingLeft: 10,
-    borderRadius: 5,
-  },
-  cursusButtonText: {
-    color: 'white',
-    fontSize: 14,
-  },
-  cursusList: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    backgroundColor: '#333',
-    borderRadius: 5,
-    marginTop: 5,
-    maxHeight: 150,
-    overflow: 'scroll',
-  },
-  cursusItem: {
-    padding: 5,
-    paddingLeft: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#444',
-  },
-  cursusItemText: {
-    color: 'white',
-    fontSize: 14,
-  },
-  projectDetailHeader: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 10,
-    marginBottom: 5,
-  },
-  teamItem: {
-    marginLeft: 10,
-    marginBottom: 10,
-  },
-  teamHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  teamName: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  teamMark: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  teamStatus: {
-    color: 'white',
-    fontSize: 12,
-  },
-  teamMembers: {
-    color: 'white',
-    fontSize: 12,
-    fontStyle: 'italic',
-  },
-  teamNameContainer: {
-    flex: 1,
-    marginRight: 10,
-  },
-  teamDate: {
-    color: '#888',
-    fontSize: 12,
-    fontWeight: 'normal',
-  },
-  statsSlider: {
-    marginTop: 10,
-  },
-  statCard: {
-    backgroundColor: '#333',
-    borderRadius: 10,
-    padding: 15,
-    marginRight: 10,
-    width: 150,
-    height: 150,
-  },
-  statTitle: {
-    color: '#888',
-    fontSize: 14,
-    marginBottom: 5,
-  },
-  statValue: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  aboutToggle: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  toggleButton: {
-    flex: 1,
-    padding: 10,
-    alignItems: 'center',
-    backgroundColor: '#333',
-    borderRadius: 15,
-    marginHorizontal: 10,
-  },
-  activeToggleButton: {
-    backgroundColor: '#3A96FF',
-  },
-  toggleButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  coequipierText: {
-    color: 'white',
-    fontSize: 14,
-  },
-  coequipierItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: -2,
-  },
-  coequipierRank: {
-    color: '#888',
-    fontSize: 14,
-    marginRight: 5,
-  },
-  coequipierLogin: {
-    color: 'white',
-    fontSize: 14,
-  },
-  coequipierCount: {
-    color: '#FFF',
-    fontSize: 14,
-  },
-  page: {
-    width: Dimensions.get('window').width - 70, // Ajusté pour le nouveau padding
-    paddingHorizontal: 10, // Ajoute un padding horizontal
-  },
-  pagination: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  paginationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'gray',
-    marginHorizontal: 4,
-    marginTop: '5%',
-  },
-  paginationDotActive: {
-    backgroundColor: '#1E90FF', // Assurez-vous que cette couleur est bien visible
-    width: 10, // Légèrement plus grand pour mieux le distinguer
-    height: 10,
-  },
-});
