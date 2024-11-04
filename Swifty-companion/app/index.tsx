@@ -27,6 +27,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const { theme, setTheme } = useTheme();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const isDark = theme === 'dark';
   const backgroundColor = isDark ? '#121212' : '#ffffff';
@@ -55,6 +56,7 @@ export default function HomeScreen() {
     topSection: {
       paddingTop: 120,
       alignItems: 'center',
+      position: 'relative',
     },
     searchContainer: {
       flexDirection: 'row',
@@ -115,6 +117,13 @@ export default function HomeScreen() {
       fontSize: 12,
       fontWeight: 'bold',
       color: textColor,
+    },
+    errorMessage: {
+      color: 'red',
+      position: 'absolute',
+      top: 80,
+      width: '100%',
+      textAlign: 'center',
     },
   });
   
@@ -190,6 +199,7 @@ export default function HomeScreen() {
 
   const handleLoginChange = (text: string) => {
     setLogin(text);
+    setErrorMessage(null);
     debouncedGetSuggestions(text);
   };
 
@@ -223,7 +233,7 @@ export default function HomeScreen() {
         setLogin('');
       } catch (error) {
         console.error('Erreur lors de la récupération des données:', error);
-        // Afficher un message d'erreur à l'utilisateur ici
+        setErrorMessage('Utilisateur introuvable');
       }
     }
   };
@@ -298,7 +308,11 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
       <View style={styles.topSection}>
+        
         <View style={styles.searchContainer}>
+        {errorMessage && (
+          <ThemedText style={styles.errorMessage}>{errorMessage}</ThemedText>
+        )}
           <TextInput
             style={styles.input}
             onChangeText={handleLoginChange}
