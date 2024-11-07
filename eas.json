@@ -1,0 +1,34 @@
+{
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_UID": "u-s4t2ud-8263fe624544ded33c6d7df232fe05ffbfd4cb7f1eb8c5ec37ecbbfbbcecbb17",
+        "EXPO_PUBLIC_API_SECRET": "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"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_UID": "u-s4t2ud-8263fe624544ded33c6d7df232fe05ffbfd4cb7f1eb8c5ec37ecbbfbbcecbb17",
+        "EXPO_PUBLIC_API_SECRET": "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"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_UID": "u-s4t2ud-8263fe624544ded33c6d7df232fe05ffbfd4cb7f1eb8c5ec37ecbbfbbcecbb17",
+        "EXPO_PUBLIC_API_SECRET": "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"
+      }
+    }
+  }
+}

@@ -739,15 +739,24 @@ export default function ProfilScreen() {
                     width={Dimensions.get('window').width - 90}
                     height={150}
                     chartConfig={{
-                      backgroundColor: backgroundColor,
-                      backgroundGradientFrom: backgroundColor,
-                      backgroundGradientTo: backgroundColor,
+                      backgroundColor: '#ffffff',
+                      backgroundGradientFrom: '#ffffff',
+                      backgroundGradientTo: '#ffffff',
                       color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                      labelColor: (opacity = 1) => textColor,
+                      style: {
+                        borderRadius: 16
+                      },
+                      propsForDots: {
+                        r: "6",
+                        strokeWidth: "2",
+                        stroke: "#ffa726"
+                      }
                     }}
                     accessor="population"
                     backgroundColor="transparent"
-                    paddingLeft="15"
-                    absolute
+                    hasLegend={true}
+                    center={[0, 0]}
                   />
                 ) : (
                   <ThemedText style={styles.coequipierText}>{t('Aucun projet trouvé')}</ThemedText>
