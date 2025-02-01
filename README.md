@@ -25,7 +25,15 @@ Swifty Companion est un projet de l'école 42 qui consiste à créer une applica
 ## Technologies utilisées
 
 - React native : Langage principal pour le développement iOS et android.
-- 
+  
+- Expo : Outil open-source qui facilite la création d'applications mobiles avec React Native, en offrant des outils intégrés pour tester et déployer.
+
+- TypeScript : Superset de JavaScript qui ajoute des types statiques, aidant à éviter les erreurs et à rendre le code plus fiable et maintenable.
+
+- i18n : Processus permettant de préparer les applications pour un support multilingue, facilitant la gestion des traductions et des formats régionaux.
+
+- API 42 : Interface permettant d'interagir avec la plateforme éducative 42, offrant l'accès aux données des étudiants, projets et services associés.
+
 
 ## API 42
 
