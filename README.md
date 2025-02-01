@@ -20,7 +20,7 @@ Swifty Companion est un projet de l'école 42 qui consiste à créer une applica
   - Informations sur la coalition et l'évolution dans l'école.
 
 - Gestion et affichage des erreurs (utilisateur introuvable, problème de connexion API, etc.).
-- 
+  
 
 ## Technologies utilisées
 
@@ -48,7 +48,7 @@ L'application utilise l'API publique de l'école 42 pour récupérer les informa
 - Configurez ces clés dans l'application.
 
 - Faire une requete pour obtenir un token OAUTH
-- 
+  
 
 ## Bonus
 
